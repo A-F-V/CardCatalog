@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -13,14 +14,16 @@ namespace AFVC
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Files should be named correctly in input folder");
+            Console.WriteLine("Few warnings are given in program. Ensure all codes are correct (01 is incorrect, 1 is correct)");
             string s;
             int dec;
             do
             {
-                Console.WriteLine("0 - New Card System\n1- Load Card System\n2 - Close");
+                Console.WriteLine("0 - New Card System\n1 - Load Card System\n2 - Close");
                 s = Console.ReadLine();
 
-            } while (Int32.TryParse(s,out dec));
+            } while (!Int32.TryParse(s,out dec));
 
             if (dec == 0 || dec == 1)
             {
@@ -33,30 +36,34 @@ namespace AFVC
                 CatalogManager m;
                 if (dec == 0)
                 {
-                    m = new CatalogManager(path);
+                    m = CatalogManager.Setup(path);
                 }
                 else
                 {
                     m = new CatalogManager(Loader.loaderFromFolder(path),path);
                 }
-
+                Console.Clear();
                 m.Run();
             }
         }
 
         private static string getFolderPath()
         {
-            using (var fbd = new FolderBrowserDialog())
-            {
-                DialogResult result = fbd.ShowDialog();
+            string selectedPath=null;
+            var t = new Thread((ThreadStart)(() => {
+                FolderBrowserDialog fbd = new FolderBrowserDialog();
+                fbd.RootFolder = System.Environment.SpecialFolder.MyComputer;
+                fbd.ShowNewFolderButton = true;
+                if (fbd.ShowDialog() == DialogResult.Cancel)
+                    return;
 
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
-                {
-                    return fbd.SelectedPath;
-                }
+                selectedPath = fbd.SelectedPath;
+            }));
 
-                return null;
-            }
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+            t.Join();
+            return selectedPath;
         }
     }
 }
