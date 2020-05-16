@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Catalog.cs" />
     <Compile Include="CatalogCode.cs" />
+    <Compile Include="CatalogManager.cs" />
     <Compile Include="Loader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

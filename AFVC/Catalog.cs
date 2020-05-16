@@ -15,13 +15,17 @@ namespace AFVC
             this.dict = dict;
         }
 
-        private class CatalogFolder :CatalogNode
+        private class CatalogEntry
         {
             private CatalogCode codepPrefix;
-            List<CatalogNode>
         }
 
-        private class CatalogRoot : CatalogEntry { }
+        private class CatalogFolder : CatalogEntry
+        {
+            private List<CatalogEntry> children;
+        }
+
+        private class CatalogFile : CatalogEntry { }
     }
 
    
