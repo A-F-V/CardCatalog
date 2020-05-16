@@ -9,7 +9,9 @@ namespace AFVC
 
     class CatalogManager
     {
-       public static readonly string Extension = "\\cards.afv";
+        private readonly int OPTIONS = 1;
+        public static readonly string Extension = "\\cards.afv";
+
         private Catalog catalog;
         private string folder;
 
@@ -19,6 +21,30 @@ namespace AFVC
             this.folder = folder;
         }
 
+        public CatalogManager(string folder)
+        {
+            this.catalog = new Catalog();
+            this.folder = folder;
+        }
 
+
+        public void Run()
+        {
+            int dec;
+            do
+            {
+                while (true)
+                {
+                    Console.WriteLine("0 - Update Catalog from Storage\n");
+                    if(Int32.TryParse(Console.ReadLine(),out dec) && dec>=0 && dec<OPTIONS)
+                        break;
+                }
+
+                switch (dec)
+                {
+                    
+                }
+            } while (dec);
+        }
     }
 }
