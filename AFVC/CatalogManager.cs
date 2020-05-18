@@ -202,7 +202,10 @@ namespace AFVC
                 Console.WriteLine("Set title for this file");
                 string title = ReadAnswer();
                 CreateFolderFor(code);
-                File.Move(pic, folder + storage + FolderFor(code)+"\\"+code.ToString()+Path.GetExtension(pic));
+                string path = folder + storage + FolderFor(code) + "\\" + code.ToString() + Path.GetExtension(pic);
+                if(File.Exists(path))
+                    File.Delete(path);
+                File.Move(pic, path);
                 catalog.Update(code,title);
                 p?.Kill();
             }
