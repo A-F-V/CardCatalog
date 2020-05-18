@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CatalogEntry.cs" />
     <Compile Include="Catalog.cs" />
     <Compile Include="CatalogCode.cs" />
     <Compile Include="CatalogManager.cs" />
