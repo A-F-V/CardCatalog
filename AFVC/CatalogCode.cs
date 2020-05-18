@@ -74,6 +74,18 @@ namespace AFVC
         {
             return original;
         }
+
+        public static bool SameFolder(CatalogCode codeA, CatalogCode codeB)
+        {
+            return codeA.parent.Equals(codeB.parent);
+        }
+
+        public CatalogCode Increment()
+        {
+            if (this.Equals(current))
+                return current;
+            return new CatalogCode(parent.ToString()+"."+CodePattern[Depth-1]+1);
+        }
     }
 
 }

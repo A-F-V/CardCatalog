@@ -49,7 +49,7 @@ namespace AFVC
             Get(parent).Add(code, s);
         }
 
-        private CatalogEntry Get(CatalogCode code)
+        public CatalogEntry Get(CatalogCode code)
         {
             return root.Get(code);
         }
