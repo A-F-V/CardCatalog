@@ -78,7 +78,7 @@ namespace AFVC
                         break;
                 }
 
-                if (dec == 0 || dec == 2 || dec == 3 || dec == 4 || dec == 6)
+                if (dec == 0 || dec == 2 || dec == 3 || dec == 4)
                 {
                     Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
                     int decC;
@@ -292,15 +292,28 @@ namespace AFVC
         }
 
 
-        private void UpdateCatalogFromInput() //TODO If already exist no need to set title
+        private void UpdateCatalogFromInput()
         {
             foreach (var pic in Directory.EnumerateFiles(folder + inputFolder))
             {
                 var p = PromptOpening(pic);
                 Console.WriteLine("Set the code for this file");
                 var code = new CatalogCode(ReadAnswer());
-                Console.WriteLine("Set title for this file");
-                var title = ReadAnswer();
+                string response = "No";
+                string title = "";
+                if (catalog.Contains(code))
+                {
+                    title = catalog.Get(code).name;
+                    Console.WriteLine($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
+                    response = ReadAnswer();
+                }
+
+                if (!(response.ToLower() == "y" || response.ToLower() == "yes"))
+                {
+                    Console.WriteLine("Set title for this file");
+                    title = ReadAnswer();
+                }
+
                 CreateFolderFor(code);
                 var path = folder + storage + FolderFor(code) + "\\" + code + Path.GetExtension(pic);
                 if (File.Exists(path))
