@@ -20,7 +20,7 @@ namespace AFVC
                 Color.MediumPurple,
                 Color.DarkMagenta,
                 Color.Fuchsia,
-                Color.Gold);
+                Color.Gold
             };
             public void Add(CatalogCode code, string s)
             {
