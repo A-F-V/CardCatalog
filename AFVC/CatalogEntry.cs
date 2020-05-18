@@ -5,13 +5,12 @@ using Pastel;
 
 namespace AFVC
 {
-    partial class Catalog
-    {
-        private class CatalogEntry : IComparable<CatalogEntry>
+    internal class CatalogEntry : IComparable<CatalogEntry>
         {
             public CatalogCode codePrefix { get; private set; }
             public string name { get; set; }
             public List<CatalogEntry> children = new List<CatalogEntry>();
+
             public Color[] colors = new Color[] {
                 Color.Crimson,
                 Color.FromArgb(213,254,119),
@@ -22,6 +21,7 @@ namespace AFVC
                 Color.Fuchsia,
                 Color.Gold
             };
+
             public void Add(CatalogCode code, string s)
             {
                 children.Add(new CatalogEntry(code, s));
@@ -67,17 +67,6 @@ namespace AFVC
                 return null;
             }
 
-            public override string ToString()
-            {
-                string thisString = $"|-{codePrefix.ToString().Pastel(Color.OrangeRed)}. {(name==null?string.Empty:name.Pastel(colors[Math.Min(codePrefix.Depth-1,colors.Length-1)]))}\n";
-                foreach (var child in children)
-                {
-                    thisString += new String(' ', (codePrefix.Depth+1)*3) + child.ToString();
-                }
-
-                return thisString;
-            }
-
             public IEnumerable<string> Serialize()
             {
                 List<string> output = new List<string>();
@@ -97,5 +86,5 @@ namespace AFVC
                 return codePrefix.CompareTo(other.codePrefix);
             }
         }
-    }
+    
 }

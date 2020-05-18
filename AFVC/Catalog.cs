@@ -10,8 +10,7 @@ namespace AFVC
 {
     partial class Catalog
     {
-        private CatalogEntry root;
-
+        public CatalogEntry root;
         public Catalog(Dictionary<string, string> dict)
         {
             root = new CatalogEntry();
@@ -78,10 +77,6 @@ namespace AFVC
             root = new CatalogEntry();
         }
 
-        public override string ToString()
-        {
-            return root.ToString();
-        }
 
         public void Set(CatalogCode code, string title)
         {

@@ -26,6 +26,18 @@ namespace AFVC
         public static string[] tasks = new string[]{"Update Catalog","View Catalog","Add/Update","Delete","View Card","Close"};
         private Catalog catalog;
         private string folder;
+        private Color[] colors = new Color[] {
+            Color.Crimson,
+            Color.FromArgb(213,254,119),
+            Color.FromArgb(57,240,119),
+            Color.FromArgb(0,201,167),
+            Color.MediumPurple,
+            Color.DarkMagenta,
+            Color.Fuchsia,
+            Color.Gold
+        };
+        private static int offdist = 3;
+
         [DllImport("user32.dll")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
 
@@ -71,7 +83,7 @@ namespace AFVC
                         break;
                     case 1:
                         Console.WriteLine();
-                        Console.WriteLine(catalog);
+                        PrintCatalog();
                         break;
                     case 2:
                         AddUpdateRecord();
@@ -84,6 +96,22 @@ namespace AFVC
                         break;
                 }
             } while (dec != OPTIONS-1);
+        }
+
+        private string TreePrint(CatalogEntry entry, int offset = 0)
+        {
+            string thisString = "|-" +
+                                $"{entry.codePrefix.ToString().Pastel(Color.OrangeRed)}. {(entry.name == null ? String.Empty : entry.name.Pastel(colors[Math.Min(entry.codePrefix.Depth - 1, colors.Length - 1)]))} " +
+                                (IsCard(entry.codePrefix) ? " ".PastelBg(Color.Azure) : "")+"\n";
+            foreach (var child in entry.children)
+            {
+                thisString += new String(' ', offset + offdist) + TreePrint(child,offset + offdist);
+            }
+            return thisString;
+        }
+        private void PrintCatalog()
+        {
+            Console.WriteLine(TreePrint(catalog.root));
         }
 
         private void ViewCard()
@@ -107,10 +135,15 @@ namespace AFVC
             if (Directory.Exists(testFolder))
             {
                 path = Directory.EnumerateFiles(testFolder)
-                    .First(p => Path.GetFileNameWithoutExtension(p) == code.ToString());
-                return path != null;
+                    .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == code.ToString());
+                return path != default(string);
             }
             return false;
+        }
+
+        private bool IsCard(CatalogCode code)
+        {
+            return IsCard(code, out var p);
         }
 
         private void Delete()
@@ -154,7 +187,7 @@ namespace AFVC
         {
             if (code.Equals(CatalogCode.current))
                 return "";
-            return "\\" + string.Join("\\", code.CodePattern);
+            return "\\" + String.Join("\\", code.CodePattern);
         }
 
 
@@ -163,7 +196,7 @@ namespace AFVC
             foreach (var pic in Directory.EnumerateFiles(folder + inputFolder))
             {
 
-                var p = OpenFileProcess(pic);
+                var p = PromptOpening(pic);
                 Console.WriteLine("Set the code for this file");
                 CatalogCode code = new CatalogCode(ReadAnswer());
                 Console.WriteLine("Set title for this file");
@@ -176,10 +209,19 @@ namespace AFVC
             Save();
         }
 
+        private Process PromptOpening(string pic)
+        {
+            Console.WriteLine($"Would you like to see {Path.GetFileName(pic).Pastel(Color.Aquamarine)}? (Y/N)");
+            string response = Console.ReadLine();
+            Process p = null;
+            if (response.ToLower() == "y" || response.ToLower() == "yes")
+                p = OpenFileProcess(pic);
+            return p;
+        }
+
         private static Process OpenFileProcess(string pic)
         {
             Process p = Process.Start(pic);
-            Thread.Sleep(500);
             Process thisP = Process.GetCurrentProcess();
             IntPtr s = thisP.MainWindowHandle;
             SetForegroundWindow(s);
