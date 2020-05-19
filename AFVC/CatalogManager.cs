@@ -27,7 +27,7 @@ namespace AFVC
         public static string[] tasks =
         {
             "Update Catalog", "View Catalog", "Add/Update", "Delete Folder", "Delete Card", "View Card(s)",
-            "Close"
+            "Clear Console", "Close"
         };
 
         private static readonly int offdist = 3;
@@ -73,7 +73,7 @@ namespace AFVC
                 while (true)
                 {
                     Console.WriteLine(
-                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - Close");
+                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - Clear Console\n7 - Close");
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
@@ -109,6 +109,9 @@ namespace AFVC
                             break;
                         case 5:
                             ViewCards();
+                            break;
+                        case 6:
+                            Console.Clear();
                             break;
                     }
                 }
@@ -226,8 +229,10 @@ namespace AFVC
                     output.Image.Height + temp.Image.Height),ResizeMode.BoxPad,AnchorPosition.TopLeft);
                 output.Resize(rl);
                 output.Overlay(temp);
+                temp.Dispose();
             }
             output.Image.Save(folder+tempFolder+tempFile,ImageFormat.Tiff);
+            output.Dispose();
         }
 
         private void PrintCatalog()
