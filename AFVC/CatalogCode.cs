@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -80,12 +81,14 @@ namespace AFVC
             return codeA.parent.Equals(codeB.parent);
         }
 
-        public CatalogCode Increment()
+        public int Youngest()
         {
-            if (this.Equals(current))
-                return current;
-            return new CatalogCode(parent.ToString()+"."+CodePattern[Depth-1]+1);
+            if (this == current)
+                return 0;
+            return CodePattern[Depth - 1];
         }
+
+        public static CatalogCode operator +(CatalogCode a,CatalogCode b) => new CatalogCode(a.ToString()+"."+b.ToString());
     }
 
 }

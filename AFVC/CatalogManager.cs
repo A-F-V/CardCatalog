@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Mime;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Automation.Peers;
 using ImageProcessor;
 using ImageProcessor.Imaging;
 using ImageProcessor.Processors;
@@ -27,7 +28,7 @@ namespace AFVC
         public static string[] tasks =
         {
             "Update Catalog", "View Catalog", "Add/Update", "Delete Folder", "Delete Card", "View Card(s)",
-            "Clear Console", "Close"
+            "Backup","Rename/Move","Search","Clear Console", "Close"
         };
 
         private static readonly int offdist = 3;
@@ -73,12 +74,13 @@ namespace AFVC
                 while (true)
                 {
                     Console.WriteLine(
-                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - Clear Console\n7 - Close");
+                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - Backup" +
+                        "\n7 - Rename/Move\n8 - Search\n9 - Clear Console\n10 - Close");
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
 
-                if (dec == 0 || dec == 2 || dec == 3 || dec == 4)
+                if (dec == 0 || dec == 2 || dec == 3 || dec == 4|| dec==6 || dec==7)
                 {
                     Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
                     int decC;
@@ -111,6 +113,15 @@ namespace AFVC
                             ViewCards();
                             break;
                         case 6:
+                            PromptBackUp();
+                            break;
+                        case 7:
+                            PromptRename();
+                            break;
+                        case 8:
+                            PromptSearch();
+                            break;
+                        case 9:
                             Console.Clear();
                             break;
                     }
@@ -126,6 +137,101 @@ namespace AFVC
                     Thread.Sleep(1000);
                 }
             } while (dec != OPTIONS - 1);
+        }
+
+        private void PromptSearch()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void PromptRename()
+        {
+            Console.WriteLine("Please insert the original code");
+            CatalogCode from = new CatalogCode(ReadAnswer());
+            Console.WriteLine("Please insert the new code");
+            CatalogCode to = new CatalogCode(ReadAnswer());
+            if (!IsRenameConflict(from, to))
+            {
+                Rename(from, to);
+                catalog.Delete(from);
+                Save(folder+fileLoc);
+            }
+            else
+            {
+                Console.WriteLine("Unable to rename");
+            }
+        }
+
+        private void Rename(CatalogCode a, CatalogCode b)
+        {
+            var entry = catalog.Get(a);
+            var title = entry.name;
+            foreach (var child in entry.children)
+            {
+                Rename(child.codePrefix,b+CatalogCode.Relative(a,child.codePrefix));
+            }
+            catalog.Update(b, title);
+            Directory.Delete(folder+storage+FolderFor(a));
+            if (!Directory.Exists(folder + storage + FolderFor(b)))
+                Directory.CreateDirectory(folder + storage + FolderFor(b));
+        }
+
+        private bool IsRenameConflict(CatalogCode a, CatalogCode b)
+        {
+            if (HoldsCard(a))
+                return true;
+            return catalog.Contains(b);
+        }
+
+        private bool HoldsCard(CatalogCode catalogCode)
+        {
+            return IsCard(catalogCode) || catalog.Get(catalogCode).children.Any(c => HoldsCard(c.codePrefix));
+        }
+
+        private void PromptBackUp()
+        {
+            Console.WriteLine("Please insert where to backup to: ");
+            string path = MorePaths.getFolderPath();
+            if (path == null||path ==folder)
+            {
+                Console.WriteLine("Failed to back up");
+            }
+            else
+            {
+                BackUp(path);
+            }
+        }
+
+        private void BackUp(string newFolder)
+        {
+            Wipe(newFolder);
+            Setup(newFolder);
+            Save(newFolder + fileLoc);
+            CopyFolder(folder + storage, newFolder + storage);
+        }
+
+        private void CopyFolder(string from, string to)
+        {
+            if (!Directory.Exists(to))
+                Directory.CreateDirectory(to);
+            foreach (var entry in Directory.EnumerateFileSystemEntries(from))
+            {
+                string diff = entry.RemoveFirst(from.Length);
+                if (Directory.Exists(entry))
+                {
+                    CopyFolder(entry,to+diff);
+                }
+                else
+                {
+                    File.Copy(entry,to+diff);
+                }
+            }
+        }
+
+        private void Wipe(string newFolder)
+        {
+            Directory.Delete(newFolder, true);
+            Directory.CreateDirectory(newFolder);
         }
 
         private void DeleteCard()
@@ -293,7 +399,7 @@ namespace AFVC
                 var code = new CatalogCode(ReadAnswer());
                 catalog.Delete(code);
                 Directory.Delete(folder + storage + FolderFor(code), true);
-                Save();
+                Save(folder+fileLoc);
             }
             catch (Exception e)
             {
@@ -310,7 +416,7 @@ namespace AFVC
             var title = ReadAnswer();
             if (!catalog.Contains(code)) CreateFolderFor(code);
             catalog.Update(code, title);
-            Save();
+            Save(folder + fileLoc);
         }
 
         private void CreateFolderFor(CatalogCode code)
@@ -324,7 +430,6 @@ namespace AFVC
                 return "";
             return "\\" + string.Join("\\", code.CodePattern);
         }
-
 
         private void UpdateCatalogFromInput()
         {
@@ -350,14 +455,16 @@ namespace AFVC
 
                 CreateFolderFor(code);
                 var path = folder + storage + FolderFor(code) + "\\" + code + Path.GetExtension(pic);
-                if (File.Exists(path))
-                    File.Delete(path);
+                var temppath = Directory.EnumerateFiles(Path.GetDirectoryName(path))
+                    .FirstOrDefault(o => Path.GetFileNameWithoutExtension(o) == code.ToString());
+                if(temppath!=null)
+                    File.Delete(temppath);
                 File.Move(pic, path);
                 catalog.Update(code, title);
                 p?.Kill();
             }
 
-            Save();
+            Save(folder + fileLoc);
         }
 
         private Process PromptOpening(string pic)
@@ -388,11 +495,11 @@ namespace AFVC
             return new CatalogManager(path);
         }
 
-        private void Save()
+        private void Save(string path)
         {
-            File.Delete(folder + fileLoc);
-            File.Create(folder + fileLoc).Close();
-            File.AppendAllLines(folder + fileLoc, catalog.Serialize());
+            File.Delete(path);
+            File.Create(path).Close();
+            File.AppendAllLines(path, catalog.Serialize());
         }
 
         private string ReadAnswer()

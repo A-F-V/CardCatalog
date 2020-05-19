@@ -30,7 +30,7 @@ namespace AFVC
                 var fileContent = string.Empty;
                 var filePath = string.Empty;
 
-                string path = getFolderPath();
+                string path = MorePaths.getFolderPath();
                 if(path==null)
                     return;
                 CatalogManager m;
@@ -45,25 +45,6 @@ namespace AFVC
                 Console.Clear();
                 m.Run();
             }
-        }
-
-        private static string getFolderPath()
-        {
-            string selectedPath=null;
-            var t = new Thread((ThreadStart)(() => {
-                FolderBrowserDialog fbd = new FolderBrowserDialog();
-                fbd.RootFolder = System.Environment.SpecialFolder.MyComputer;
-                fbd.ShowNewFolderButton = true;
-                if (fbd.ShowDialog() == DialogResult.Cancel)
-                    return;
-
-                selectedPath = fbd.SelectedPath;
-            }));
-
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
-            t.Join();
-            return selectedPath;
         }
     }
 }
