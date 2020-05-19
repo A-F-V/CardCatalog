@@ -161,7 +161,7 @@ namespace AFVC
                 File.Delete(folder + tempFolder + tempFile);
 
             Console.WriteLine("Insert the codes to " + "view".Pastel(Color.DeepSkyBlue));
-            Console.WriteLine("To create a range, use \"-\" between codes, and seperate groupings with a \",\"");
+            Console.WriteLine("To create a range, use \"-\" between codes, use a \".\" at the end of codes to force not going down, and seperate groupings with a \",\"");
             List<CodeRange> codeRanges = CodeRange.Parse(ReadAnswer());
             List<CatalogCode> cards = CardsInRange(codeRanges);
             if (cards.Count != 0)
@@ -190,9 +190,10 @@ namespace AFVC
                     if (child.codePrefix.CompareTo(codeRange.fromCode) >= 0 &&
                         child.codePrefix.CompareTo(codeRange.toCode) <= 0)
                     {
-                        output.AddRange(CardsOf(catalog.Get(temp)));
                         if (IsCard(temp))
                             output.Add(temp);
+                        if(codeRange.childrenAsWell)
+                            output.AddRange(CardsOf(catalog.Get(temp)));
                     }
                 }
             }
@@ -204,9 +205,9 @@ namespace AFVC
             List<CatalogCode> output = new List<CatalogCode>();
             foreach (var child in temp.children)
             {
-                output.AddRange(CardsOf(child));
                 if (IsCard(child.codePrefix))
                     output.Add(child.codePrefix);
+                output.AddRange(CardsOf(child));
             }
 
             return output;
@@ -222,7 +223,7 @@ namespace AFVC
                 temp.Image = Image.FromFile(path);
                 temp.Position = new Point(0,output.Image.Height);
                 ResizeLayer rl = new ResizeLayer(new Size(Math.Max(temp.Image.Width, output.Image.Width),
-                    output.Image.Height + temp.Image.Height),ResizeMode.Pad,AnchorPosition.TopLeft);
+                    output.Image.Height + temp.Image.Height),ResizeMode.BoxPad,AnchorPosition.TopLeft);
                 output.Resize(rl);
                 output.Overlay(temp);
             }
@@ -404,16 +405,24 @@ namespace AFVC
     {
         internal CatalogCode fromCode;
         internal CatalogCode toCode;
+        internal bool childrenAsWell = true;
         
         public CodeRange(string range)
         {
             string[] codes = range.Split('-');
+            int l1 = codes[0].Length;
+            if (l1 >= 2 && codes[0][l1 - 1] == '.')
+            {
+                childrenAsWell = false;
+                codes[0] = codes[0].RemoveLast(1);
+            }
+
             fromCode = new CatalogCode(codes[0]);
             if (codes.Length == 1)
                 toCode = fromCode;
             else
             {
-                toCode = new CatalogCode(codes[1]);
+                toCode = new CatalogCode(childrenAsWell?codes[1]:codes[1].RemoveLast(1));
                 if (!CatalogCode.SameFolder(fromCode, toCode) || fromCode.CompareTo(toCode) > 0)
                     throw new CatalogError("Invalid code range.");
             }
