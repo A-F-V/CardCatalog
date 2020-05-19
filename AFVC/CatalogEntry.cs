@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Text.RegularExpressions;
 using Pastel;
 
 namespace AFVC
@@ -84,6 +85,25 @@ namespace AFVC
                 if (ReferenceEquals(this, other)) return 0;
                 if (ReferenceEquals(null, other)) return 1;
                 return codePrefix.CompareTo(other.codePrefix);
+            }
+
+            public List<CatalogEntry> Search(string query)
+            {
+                List<CatalogEntry> output = new List<CatalogEntry>();
+                if(!codePrefix.Equals(CatalogCode.current)&&name.ToLower().Contains(query))
+                    output.Add(this);
+                foreach (var child in children)
+                {
+                    output.AddRange(child.Search(query));
+                }
+
+                return output;
+            }
+
+            public string FancifyEntry()
+            {
+                return $"{this.codePrefix.ToString().Pastel(Color.OrangeRed)}." +
+                       $" {(this.name == null ? string.Empty : this.name.Pastel(CatalogManager.Colors[Math.Min(this.codePrefix.Depth - 1, CatalogManager.Colors.Length - 1)]))}";
             }
         }
     

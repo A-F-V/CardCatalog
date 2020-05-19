@@ -94,5 +94,9 @@ namespace AFVC
             return output;
         }
 
+        public List<CatalogEntry> Search(string query)
+        {
+            return root.Search(query.ToLower());
+        }
     }
 }

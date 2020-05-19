@@ -35,7 +35,7 @@ namespace AFVC
         private readonly int OPTIONS = tasks.Length;
         private readonly Catalog catalog;
 
-        private readonly Color[] colors =
+        private static readonly Color[] colors =
         {
             Color.Crimson,
             Color.FromArgb(213, 254, 119),
@@ -60,6 +60,11 @@ namespace AFVC
         {
             catalog = new Catalog();
             this.folder = folder;
+        }
+
+        public static Color[] Colors
+        {
+            get { return colors; }
         }
 
         [DllImport("user32.dll")]
@@ -141,7 +146,15 @@ namespace AFVC
 
         private void PromptSearch()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Insert the phrase to search:");
+            List<CatalogEntry> entries = catalog.Search(ReadAnswer());
+            Console.WriteLine();
+            foreach (var entry in entries)
+            {
+                Console.WriteLine(entry.FancifyEntry());
+            }
+
+            Console.WriteLine();
         }
 
         private void PromptRename()
@@ -251,8 +264,7 @@ namespace AFVC
         {
             if (depth == 0)
                 return "";
-            var thisString = "|-" +
-                             $"{entry.codePrefix.ToString().Pastel(Color.OrangeRed)}. {(entry.name == null ? string.Empty : entry.name.Pastel(colors[Math.Min(entry.codePrefix.Depth - 1, colors.Length - 1)]))} " +
+            var thisString = "|-" + entry.FancifyEntry() + " " +
                              (IsCard(entry.codePrefix) ? " ".PastelBg(Color.Azure) : "") + "\n";
             if (depth > 1 || depth == -1)
             {
