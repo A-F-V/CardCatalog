@@ -138,13 +138,20 @@ namespace AFVC
             }
         }
 
-        private string TreePrint(CatalogEntry entry, int offset = 0)
+        private string TreePrint(CatalogEntry entry, int depth=-1,int offset = 0)
         {
+            if (depth == 0)
+                return "";
             var thisString = "|-" +
                              $"{entry.codePrefix.ToString().Pastel(Color.OrangeRed)}. {(entry.name == null ? string.Empty : entry.name.Pastel(colors[Math.Min(entry.codePrefix.Depth - 1, colors.Length - 1)]))} " +
                              (IsCard(entry.codePrefix) ? " ".PastelBg(Color.Azure) : "") + "\n";
-            foreach (var child in entry.children)
-                thisString += new string(' ', offset + offdist) + TreePrint(child, offset + offdist);
+            if (depth > 1 || depth == -1)
+            {
+                foreach (var child in entry.children)
+                    thisString += new string(' ', offset + offdist) +
+                                  TreePrint(child, depth == -1 ? -1 : depth - 1, offset + offdist);
+
+            }
             return thisString;
         }
 
@@ -224,7 +231,28 @@ namespace AFVC
 
         private void PrintCatalog()
         {
-            Console.WriteLine(TreePrint(catalog.root));
+            Console.WriteLine("Insert the code you want to display (. for all):");
+            string response = ReadAnswer();
+            Console.WriteLine("And to what depth (-1 for all)?");
+            CatalogCode code = CatalogCode.current;
+            if (!Int32.TryParse(ReadAnswer(),out int depth))
+            {
+                depth = -1;
+            }
+            try
+            {
+                code = new CatalogCode(response);
+
+            }
+            catch (Exception e)
+            {
+                code = CatalogCode.current;
+            }
+
+            if (code.Equals(CatalogCode.current)&&depth>=1)
+                depth++;
+            Console.WriteLine(TreePrint(catalog.Get(code), depth));
+            
         }
 
         private bool IsCard(CatalogCode code, out string path)
