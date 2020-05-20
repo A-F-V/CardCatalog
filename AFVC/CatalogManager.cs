@@ -38,8 +38,8 @@ namespace AFVC
         };
         public static string[] tasks =
         {
-            "Update Catalog", "View Catalog", "Add/Update", "Delete Folder", "Delete Card", "View Card(s)",
-            "Backup","Rename/Move","Search","Clear Console", "Close"
+            "Update Catalog", "View Catalog", "Add/Update", "Delete Folder", "Delete Card", "View Card(s)", "View Document",
+            "Backup","Rename/Move","Search","Open Folder","Clear Console", "Close"
         };
 
         private static readonly int offdist = 3;
@@ -74,13 +74,13 @@ namespace AFVC
                 while (true)
                 {
                     Console.WriteLine(
-                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - Backup" +
-                        "\n7 - Rename/Move\n8 - Search\n9 - Clear Console\n10 - Close");
+                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - View Document" +
+                        "\n7 - Backup\n8 - Rename/Move\n9 - Search\n10 - Open Folder\n11 - Clear Console\n12 - Close");
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
 
-                if (dec == 0 || dec == 3 || dec == 4|| dec==6 || dec==7)
+                if (dec == 0 || dec == 3 || dec == 4|| dec==7 || dec==8)
                 {
                     Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
                     int decC;
@@ -113,15 +113,21 @@ namespace AFVC
                             ViewCards();
                             break;
                         case 6:
-                            PromptBackUp();
+                            PromptViewDocument();
                             break;
                         case 7:
-                            PromptRename();
+                            PromptBackUp();
                             break;
                         case 8:
-                            PromptSearch();
+                            PromptRename();
                             break;
                         case 9:
+                            PromptSearch();
+                            break;
+                        case 10:
+                            PromptOpenFolder();
+                            break;
+                        case 11:
                             Console.Clear();
                             break;
                     }
@@ -137,6 +143,26 @@ namespace AFVC
                     Thread.Sleep(500);
                 }
             } while (dec != OPTIONS - 1);
+        }
+
+        private void PromptOpenFolder()
+        {
+            Console.WriteLine("Insert the code of the folder to open:");
+            CatalogCode code = new CatalogCode(ReadAnswer());
+            if(!catalog.Contains(code))
+                throw new CatalogError($"{code} does not exist");
+            OpenFileProcess(folder + storage + FolderFor(code));
+        }
+
+        private void PromptViewDocument()
+        {
+            Console.WriteLine("Insert the code of the file to view:");
+            CatalogCode code = new CatalogCode(ReadAnswer());
+            if(code.Equals(CatalogCode.current))
+                throw new CatalogError("Cannot open root");
+            if(!IsFile(code,out string path))
+                throw new CatalogError($"{code} is not a file");
+            OpenFileProcess(path);
         }
 
         private void PromptSearch()
@@ -378,10 +404,13 @@ namespace AFVC
             }
             return false;
         }
-
+        private bool IsFile(CatalogCode code,out string path)
+        {
+            return IsFile(code, out path, out var b);
+        }
         private bool IsFile(CatalogCode code)
         {
-            return IsFile(code, out var p,out var b);
+            return IsFile(code, out var p);
         }
 
         private string CardPath(CatalogCode code)
