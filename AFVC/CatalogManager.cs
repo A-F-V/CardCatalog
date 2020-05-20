@@ -24,7 +24,18 @@ namespace AFVC
         public static readonly string storage = "\\cards";
         public static readonly string tempFolder = "\\temp";
         public static readonly string tempFile = "\\temp.tiff";
+        public static readonly string[] imageFormats = new[] {".jpg", ".png", ".tif", ".bmp", ".gif",".jpeg"};
 
+        public static Color[] Colors = new Color[] {
+            Color.Crimson,
+            Color.FromArgb(213,254,119),
+            Color.FromArgb(57,240,119),
+            Color.FromArgb(0,201,167),
+            Color.MediumPurple,
+            Color.DarkMagenta,
+            Color.Fuchsia,
+            Color.Gold
+        };
         public static string[] tasks =
         {
             "Update Catalog", "View Catalog", "Add/Update", "Delete Folder", "Delete Card", "View Card(s)",
@@ -35,17 +46,6 @@ namespace AFVC
         private readonly int OPTIONS = tasks.Length;
         private readonly Catalog catalog;
 
-        private static readonly Color[] colors =
-        {
-            Color.Crimson,
-            Color.FromArgb(213, 254, 119),
-            Color.FromArgb(57, 240, 119),
-            Color.FromArgb(0, 201, 167),
-            Color.MediumPurple,
-            Color.DarkMagenta,
-            Color.Fuchsia,
-            Color.Gold
-        };
 
         private readonly string folder;
 
@@ -60,11 +60,6 @@ namespace AFVC
         {
             catalog = new Catalog();
             this.folder = folder;
-        }
-
-        public static Color[] Colors
-        {
-            get { return colors; }
         }
 
         [DllImport("user32.dll")]
@@ -112,7 +107,7 @@ namespace AFVC
                             PromptDeleteFolder();
                             break;
                         case 4:
-                            DeleteCard();
+                            DeleteFile();
                             break;
                         case 5:
                             ViewCards();
@@ -185,7 +180,7 @@ namespace AFVC
             }
             if (!Directory.Exists(folder + storage + FolderFor(b)))
                 Directory.CreateDirectory(folder + storage + FolderFor(b));
-            if (IsCard(a,out string oldPath))
+            if (IsFile(a,out string oldPath,out var x))
             {
                 SetFileCode(oldPath, b);
             }
@@ -244,11 +239,11 @@ namespace AFVC
             Directory.CreateDirectory(newFolder);
         }
 
-        private void DeleteCard()
+        private void DeleteFile()
         {
             Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
             var code = new CatalogCode(ReadAnswer());
-            if (IsCard(code))
+            if (IsFile(code))
             {
                 var path = Directory.EnumerateFiles(folder + storage + FolderFor(code))
                     .FirstOrDefault(s => s.Contains(code.ToString()));
@@ -261,8 +256,9 @@ namespace AFVC
         {
             if (depth == 0)
                 return "";
+            bool isFile = IsFile(entry.codePrefix, out string path, out bool isImage);
             var thisString = "|-" + entry.FancifyEntry() + " " +
-                             (IsCard(entry.codePrefix) ? " ".PastelBg(Color.Azure) : "") + "\n";
+                             (isFile? " ".PastelBg(isImage? Color.DodgerBlue:Color.OrangeRed) : "") + "\n";
             if (depth > 1 || depth == -1)
             {
                 foreach (var child in entry.children)
@@ -308,7 +304,8 @@ namespace AFVC
                     if (child.codePrefix.CompareTo(codeRange.fromCode) >= 0 &&
                         child.codePrefix.CompareTo(codeRange.toCode) <= 0)
                     {
-                        if (IsCard(temp))
+                        IsFile(temp, out string p, out bool isImage);
+                        if (isImage)
                             output.Add(temp);
                         if(codeRange.childrenAsWell)
                             output.AddRange(CardsOf(catalog.Get(temp)));
@@ -323,7 +320,8 @@ namespace AFVC
             List<CatalogCode> output = new List<CatalogCode>();
             foreach (var child in temp.children)
             {
-                if (IsCard(child.codePrefix))
+                IsFile(child.codePrefix, out string p, out bool isImage);
+                if (isImage)
                     output.Add(child.codePrefix);
                 output.AddRange(CardsOf(child));
             }
@@ -367,21 +365,23 @@ namespace AFVC
             
         }
 
-        private bool IsCard(CatalogCode code, out string path)
+        private bool IsFile(CatalogCode code, out string path, out bool b)
         {
             path = null;
+            b = false;
             var testFolder = folder + storage + FolderFor(code);
             if (Directory.Exists(testFolder))
             {
                 path = CardPath(code);
+                b = imageFormats.Contains(Path.GetExtension(path));
                 return path != default;
             }
             return false;
         }
 
-        private bool IsCard(CatalogCode code)
+        private bool IsFile(CatalogCode code)
         {
-            return IsCard(code, out var p);
+            return IsFile(code, out var p,out var b);
         }
 
         private string CardPath(CatalogCode code)

@@ -12,17 +12,6 @@ namespace AFVC
             public string name { get; set; }
             public List<CatalogEntry> children = new List<CatalogEntry>();
 
-            public Color[] colors = new Color[] {
-                Color.Crimson,
-                Color.FromArgb(213,254,119),
-                Color.FromArgb(57,240,119),
-                Color.FromArgb(0,201,167),
-                Color.MediumPurple,
-                Color.DarkMagenta,
-                Color.Fuchsia,
-                Color.Gold
-            };
-
             public void Add(CatalogCode code, string s)
             {
                 children.Add(new CatalogEntry(code, s));
