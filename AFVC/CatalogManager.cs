@@ -85,7 +85,7 @@ namespace AFVC
                         break;
                 }
 
-                if (dec == 0 || dec == 2 || dec == 3 || dec == 4|| dec==6 || dec==7)
+                if (dec == 0 || dec == 3 || dec == 4|| dec==6 || dec==7)
                 {
                     Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
                     int decC;
@@ -134,12 +134,12 @@ namespace AFVC
                 catch (CatalogError e)
                 {
                     Console.WriteLine("There was a serious error: " + e.Message.Pastel(Color.Red) + ". Reprompting...");
-                    Thread.Sleep(1000);
+                    Thread.Sleep(500);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("There was a serious " + "error".Pastel(Color.Red) + ". Reprompting...");
-                    Thread.Sleep(1000);
+                    Thread.Sleep(500);
                 }
             } while (dec != OPTIONS - 1);
         }
@@ -354,22 +354,13 @@ namespace AFVC
         {
             Console.WriteLine("Insert the code you want to display (. for all):");
             string response = ReadAnswer();
+            CatalogCode code = new CatalogCode(response);
+
             Console.WriteLine("And to what depth (-1 for all)?");
-            CatalogCode code = CatalogCode.current;
             if (!Int32.TryParse(ReadAnswer(),out int depth))
             {
                 depth = -1;
             }
-            try
-            {
-                code = new CatalogCode(response);
-
-            }
-            catch (Exception e)
-            {
-                code = CatalogCode.current;
-            }
-
             if (code.Equals(CatalogCode.current)&&depth>=1)
                 depth++;
             Console.WriteLine(TreePrint(catalog.Get(code), depth));
@@ -425,6 +416,8 @@ namespace AFVC
         {
             Console.WriteLine("Insert the new code to add");
             var input = ReadAnswer();
+            if(input=="")
+                throw  new CatalogError("Cannot Update the Root");
             var code = new CatalogCode(input);
             Console.WriteLine("Insert the title of this record");
             var title = ReadAnswer();

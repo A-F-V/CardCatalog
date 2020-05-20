@@ -26,11 +26,18 @@ namespace AFVC
 
         private void generateCodePattern(string codeOriginal)
         {
-            if (codeOriginal == "" || codeOriginal == "root")
-                CodePattern = new int[0];
-            else
+            try
             {
-                CodePattern = codeOriginal.Split('.').Select(Int32.Parse).ToArray();
+                if (codeOriginal == "" || codeOriginal == "root")
+                    CodePattern = new int[0];
+                else
+                {
+                    CodePattern = codeOriginal.Split('.').Select(Int32.Parse).ToArray();
+                }
+            }
+            catch (Exception e)
+            {
+                throw new CatalogError($"{codeOriginal} is not a valid code");
             }
         }
 
