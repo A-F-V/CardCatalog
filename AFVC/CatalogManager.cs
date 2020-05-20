@@ -109,7 +109,7 @@ namespace AFVC
                             AddUpdateRecord();
                             break;
                         case 3:
-                            DeleteFolder();
+                            PromptDeleteFolder();
                             break;
                         case 4:
                             DeleteCard();
@@ -148,7 +148,6 @@ namespace AFVC
         {
             Console.WriteLine("Insert the phrase to search:");
             List<CatalogEntry> entries = catalog.Search(ReadAnswer());
-            Console.WriteLine();
             foreach (var entry in entries)
             {
                 Console.WriteLine(entry.FancifyEntry());
@@ -167,6 +166,7 @@ namespace AFVC
             {
                 Rename(from, to);
                 catalog.Delete(from);
+                DeleteFolderOfCode(from);
                 Save(folder+fileLoc);
             }
             else
@@ -183,22 +183,19 @@ namespace AFVC
             {
                 Rename(child.codePrefix,b+CatalogCode.Relative(a,child.codePrefix));
             }
-            catalog.Update(b, title);
-            Directory.Delete(folder+storage+FolderFor(a));
             if (!Directory.Exists(folder + storage + FolderFor(b)))
                 Directory.CreateDirectory(folder + storage + FolderFor(b));
+            if (IsCard(a,out string oldPath))
+            {
+                SetFileCode(oldPath, b);
+            }
+            catalog.Update(b, title);
+            
         }
 
         private bool IsRenameConflict(CatalogCode a, CatalogCode b)
         {
-            if (HoldsCard(a))
-                return true;
             return catalog.Contains(b);
-        }
-
-        private bool HoldsCard(CatalogCode catalogCode)
-        {
-            return IsCard(catalogCode) || catalog.Get(catalogCode).children.Any(c => HoldsCard(c.codePrefix));
         }
 
         private void PromptBackUp()
@@ -391,6 +388,11 @@ namespace AFVC
             return false;
         }
 
+        private bool IsCard(CatalogCode code)
+        {
+            return IsCard(code, out var p);
+        }
+
         private string CardPath(CatalogCode code)
         {
             string testFolder = folder + storage + FolderFor(code);
@@ -398,25 +400,25 @@ namespace AFVC
                 .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == code.ToString());
         }
 
-        private bool IsCard(CatalogCode code)
-        {
-            return IsCard(code, out var p);
-        }
-
-        private void DeleteFolder()
+        private void PromptDeleteFolder()
         {
             try
             {
                 Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
                 var code = new CatalogCode(ReadAnswer());
                 catalog.Delete(code);
-                Directory.Delete(folder + storage + FolderFor(code), true);
+                DeleteFolderOfCode(code);
                 Save(folder+fileLoc);
             }
             catch (Exception e)
             {
                 Console.WriteLine("ERROR".PastelBg(Color.Red) + "IN DELETING");
             }
+        }
+
+        private void DeleteFolderOfCode(CatalogCode code)
+        {
+            Directory.Delete(folder + storage + FolderFor(code), true);
         }
 
         private void AddUpdateRecord() 
@@ -466,17 +468,22 @@ namespace AFVC
                 }
 
                 CreateFolderFor(code);
-                var path = folder + storage + FolderFor(code) + "\\" + code + Path.GetExtension(pic);
-                var temppath = Directory.EnumerateFiles(Path.GetDirectoryName(path))
-                    .FirstOrDefault(o => Path.GetFileNameWithoutExtension(o) == code.ToString());
-                if(temppath!=null)
-                    File.Delete(temppath);
-                File.Move(pic, path);
+                SetFileCode(pic, code);
                 catalog.Update(code, title);
                 p?.Kill();
             }
 
             Save(folder + fileLoc);
+        }
+
+        private void SetFileCode(string originalFile, CatalogCode code)
+        {
+            var path = folder + storage + FolderFor(code) + "\\" + code + Path.GetExtension(originalFile);
+            var temppath = Directory.EnumerateFiles(Path.GetDirectoryName(path))
+                .FirstOrDefault(o => Path.GetFileNameWithoutExtension(o) == code.ToString());
+            if (temppath != null)
+                File.Delete(temppath);
+            File.Move(originalFile, path);
         }
 
         private Process PromptOpening(string pic)
