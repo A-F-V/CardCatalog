@@ -98,5 +98,17 @@ namespace AFVC
         {
             return root.Search(query.ToLower());
         }
+
+        public CatalogCode NewChild(CatalogCode code)
+        {
+            var ce = Get(code);
+            if(ce==null||ce.children.Count==0)
+                return new CatalogCode(code.ToString()+".0");
+            else
+            {
+                int addition = ce.children.Max(c => c.codePrefix.Youngest())+1;
+                return new CatalogCode(code.ToString()+$".{addition}");
+            }
+        }
     }
 }

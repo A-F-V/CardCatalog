@@ -443,16 +443,31 @@ namespace AFVC
 
         private void AddUpdateRecord() 
         {
-            Console.WriteLine("Insert the new code to add");
-            var input = ReadAnswer();
-            if(input=="")
-                throw  new CatalogError("Cannot Update the Root");
-            var code = new CatalogCode(input);
-            Console.WriteLine("Insert the title of this record");
-            var title = ReadAnswer();
+            CatalogCode code = PromptCodeOrNewChild("Insert the new code to add");
+            var title = PromptNewOrOldTitle(code);
             if (!catalog.Contains(code)) CreateFolderFor(code);
             catalog.Update(code, title);
             Save(folder + fileLoc);
+        }
+
+        private string PromptNewOrOldTitle(CatalogCode code)
+        {
+            string response = "N";
+            string title = "";
+            if (catalog.Contains(code))
+            {
+                title = catalog.Get(code).name;
+                Console.WriteLine($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
+                response = ReadAnswer();
+            }
+
+            if (!(response.ToLower() == "y" || response.ToLower() == "yes"))
+            {
+                Console.WriteLine($"Insert the title of {code.ToString().Pastel(Color.OrangeRed)}");
+                title = ReadAnswer();
+            }
+
+            return title;
         }
 
         private void CreateFolderFor(CatalogCode code)
@@ -472,22 +487,8 @@ namespace AFVC
             foreach (var pic in Directory.EnumerateFiles(folder + inputFolder))
             {
                 var p = PromptOpening(pic);
-                Console.WriteLine("Set the code for this file");
-                var code = new CatalogCode(ReadAnswer());
-                string response = "No";
-                string title = "";
-                if (catalog.Contains(code))
-                {
-                    title = catalog.Get(code).name;
-                    Console.WriteLine($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
-                    response = ReadAnswer();
-                }
-
-                if (!(response.ToLower() == "y" || response.ToLower() == "yes"))
-                {
-                    Console.WriteLine("Set title for this file");
-                    title = ReadAnswer();
-                }
+                var code = PromptCodeOrNewChild("Set the code for this file");
+                string title = PromptNewOrOldTitle(code);
 
                 CreateFolderFor(code);
                 SetFileCode(pic, code);
@@ -496,6 +497,21 @@ namespace AFVC
             }
 
             Save(folder + fileLoc);
+        }
+
+        private CatalogCode PromptCodeOrNewChild(string promptMessage)
+        {
+            Console.WriteLine(promptMessage);
+            string input = ReadAnswer();
+            if (input == "")
+                throw new CatalogError("Cannot alter the Root");
+
+            if (input.EndsWith("."))
+            {
+                CatalogCode code = new CatalogCode(input.RemoveLast(1));
+                return catalog.NewChild(code);
+            }
+            return new CatalogCode(input);
         }
 
         private void SetFileCode(string originalFile, CatalogCode code)
