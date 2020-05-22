@@ -95,7 +95,14 @@ namespace AFVC
             return CodePattern[Depth - 1];
         }
 
-        public static CatalogCode operator +(CatalogCode a,CatalogCode b) => new CatalogCode(a.ToString()+"."+b.ToString());
+        public static CatalogCode operator +(CatalogCode a,CatalogCode b) => new CatalogCode(a.ToString()+ (a.Equals(current) ? "" : ".") + b.ToString());
+
+        public static CatalogCode operator +(CatalogCode a, int diff)=> new CatalogCode(a.parent.ToString()+(a.parent.Equals(current)?"":".")+(a.Youngest()+diff).ToString());
+
+        public CatalogCode Increment()
+        {
+            return this + 1;
+        }
     }
 
 }

@@ -38,7 +38,7 @@ namespace AFVC
         };
         public static string[] tasks =
         {
-            "Update Catalog", "View Catalog", "Add/Update", "Delete Folder", "Delete Card", "View Card(s)", "View Document",
+            "Update Catalog", "View Catalog", "Add/Update","Shift", "Delete Folder", "Delete Card", "View Card(s)", "View Document",
             "Backup","Rename/Move","Search","Open Folder","Clear Console", "Close"
         };
 
@@ -74,13 +74,13 @@ namespace AFVC
                 while (true)
                 {
                     Console.WriteLine(
-                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Delete Folder\n4 - Delete Card\n5 - View Card(s)\n6 - View Document" +
-                        "\n7 - Backup\n8 - Rename/Move\n9 - Search\n10 - Open Folder\n11 - Clear Console\n12 - Close");
+                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Shift\n4 - Delete Folder\n5 - Delete Card\n6 - View Card(s)\n7 - View Document" +
+                        "\n8 - Backup\n9 - Rename/Move\n10 - Search\n11 - Open Folder\n12 - Clear Console\n13 - Close");
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
 
-                if (dec == 0 || dec == 3 || dec == 4|| dec==7 || dec==8)
+                if (dec == 0 || dec == 4 || dec == 5|| dec== 8|| dec==9)
                 {
                     Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
                     int decC;
@@ -104,30 +104,33 @@ namespace AFVC
                             AddUpdateRecord();
                             break;
                         case 3:
-                            PromptDeleteFolder();
+                            PromptShift();
                             break;
                         case 4:
-                            DeleteFile();
+                            PromptDeleteFolder();
                             break;
                         case 5:
-                            ViewCards();
+                            DeleteFile();
                             break;
                         case 6:
-                            PromptViewDocument();
+                            ViewCards();
                             break;
                         case 7:
-                            PromptBackUp();
+                            PromptViewDocument();
                             break;
                         case 8:
-                            PromptRename();
+                            PromptBackUp();
                             break;
                         case 9:
-                            PromptSearch();
+                            PromptRename();
                             break;
                         case 10:
-                            PromptOpenFolder();
+                            PromptSearch();
                             break;
                         case 11:
+                            PromptOpenFolder();
+                            break;
+                        case 12:
                             Console.Clear();
                             break;
                     }
@@ -143,6 +146,18 @@ namespace AFVC
                     Thread.Sleep(500);
                 }
             } while (dec != OPTIONS - 1);
+        }
+
+        private void PromptShift()
+        {
+            Console.WriteLine("Please insert the range to shift along");
+            CodeRange orig = new CodeRange(ReadAnswer());
+            Console.WriteLine("Please insert by how much");
+            int dist = Int32.Parse(ReadAnswer());
+            CodeRange shifted = orig + dist;
+            if(catalog.Contains(shifted-orig,orig,(shifted-orig).fromCode.Youngest()-shifted.fromCode.Youngest()))
+                throw new CatalogError($"Cannot shift {orig} by {dist}");
+            Rename(orig,shifted);
         }
 
         private void PromptOpenFolder()
@@ -185,10 +200,7 @@ namespace AFVC
             CatalogCode to = new CatalogCode(ReadAnswer());
             if (!IsRenameConflict(from, to))
             {
-                Rename(from, to);
-                catalog.Delete(from);
-                DeleteFolderOfCode(from);
-                Save(folder+fileLoc);
+                RenameAndSave(from, to);
             }
             else
             {
@@ -196,8 +208,20 @@ namespace AFVC
             }
         }
 
+        private void RenameAndSave(CatalogCode a, CatalogCode b)
+        {
+            if (!catalog.Contains(a))
+                return;
+            Rename(a, b);
+            catalog.Delete(a);
+            DeleteFolderOfCode(a);
+            Save(folder + fileLoc);
+        }
+
         private void Rename(CatalogCode a, CatalogCode b)
         {
+            if (!catalog.Contains(a))
+                return;
             var entry = catalog.Get(a);
             var title = entry.name;
             foreach (var child in entry.children)
@@ -212,6 +236,36 @@ namespace AFVC
             }
             catalog.Update(b, title);
             
+
+        }
+
+        private void Rename(CodeRange a, CodeRange b)
+        {
+            if (a.Equals(b))
+                return;
+            while (true)
+            {
+                if (a.Span == 1)
+                    RenameAndSave(a.fromCode, b.fromCode);
+                else
+                {
+                    if (a.fromCode.Youngest() < b.fromCode.Youngest())
+                    {
+                        RenameAndSave(a.toCode, b.toCode);
+                        a = new CodeRange(a.fromCode, a.toCode + (-1));
+                        b = new CodeRange(b.fromCode, b.toCode + (-1));
+                        continue;
+                    }
+                    else
+                    {
+                        RenameAndSave(a.fromCode, b.fromCode);
+                        a = new CodeRange(a.fromCode + (1), a.toCode);
+                        b = new CodeRange(b.fromCode + (1), b.toCode);
+                        continue;
+                    }
+                }
+                break;
+            }
         }
 
         private bool IsRenameConflict(CatalogCode a, CatalogCode b)
@@ -452,22 +506,30 @@ namespace AFVC
 
         private string PromptNewOrOldTitle(CatalogCode code)
         {
-            string response = "N";
+            YNAnswer response = YNAnswer.No;
             string title = "";
             if (catalog.Contains(code))
             {
                 title = catalog.Get(code).name;
-                Console.WriteLine($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
-                response = ReadAnswer();
+                response = AskYNQuestion($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
             }
 
-            if (!(response.ToLower() == "y" || response.ToLower() == "yes"))
+            if (response==YNAnswer.No)
             {
                 Console.WriteLine($"Insert the title of {code.ToString().Pastel(Color.OrangeRed)}");
                 title = ReadAnswer();
             }
 
             return title;
+        }
+
+        private YNAnswer AskYNQuestion(string s)
+        {
+            Console.WriteLine(s);
+            string response = ReadAnswer();
+            if (response.ToLower() == "y" || response.ToLower() == "yes")
+                return YNAnswer.Yes;
+            return YNAnswer.No;
         }
 
         private void CreateFolderFor(CatalogCode code)
@@ -526,10 +588,9 @@ namespace AFVC
 
         private Process PromptOpening(string pic)
         {
-            Console.WriteLine($"Would you like to see {Path.GetFileName(pic).Pastel(Color.Aquamarine)}? (Y/N)");
-            var response = ReadAnswer();
             Process p = null;
-            if (response.ToLower() == "y" || response.ToLower() == "yes")
+            YNAnswer response = AskYNQuestion($"Would you like to see {Path.GetFileName(pic).Pastel(Color.Aquamarine)}? (Y/N)");
+            if (response==YNAnswer.Yes)
                 p = OpenFileProcess(pic);
             return p;
         }
@@ -575,7 +636,13 @@ namespace AFVC
         internal CatalogCode fromCode;
         internal CatalogCode toCode;
         internal bool childrenAsWell = true;
-        
+
+        public CodeRange(CatalogCode f, CatalogCode t, bool caw = true)
+        {
+            fromCode = f;
+            toCode = t;
+            childrenAsWell = caw;
+        }
         public CodeRange(string range)
         {
             string[] codes = range.Split('-');
@@ -607,6 +674,46 @@ namespace AFVC
             }
 
             return output;
+        }
+
+        public static CodeRange operator +(CodeRange r, int diff)
+        {
+            return new CodeRange(r.fromCode + diff, r.toCode + diff, r.childrenAsWell);
+        }
+
+        public static CodeRange operator -(CodeRange a, CodeRange b)
+        {
+            if(a.Span!=b.Span ||!a.fromCode.parent.Equals(b.fromCode.parent)||a.childrenAsWell!=b.childrenAsWell)
+                throw new CatalogError($"Cannot find difference between {a} and {b}");
+            if (a.Equals(b))
+                return null;
+            CatalogCode temp;
+            if (a.fromCode.Youngest() < b.fromCode.Youngest())
+            { 
+                temp = a.fromCode.parent +
+                     new CatalogCode((Math.Min(a.toCode.Youngest(), b.fromCode.Youngest()-1)).ToString());
+                return new CodeRange(a.fromCode, temp);
+            }
+            else
+            { 
+                temp = a.fromCode.parent +
+                     new CatalogCode((Math.Max(a.fromCode.Youngest(), b.toCode.Youngest()+1)).ToString());
+                return new CodeRange(temp, a.toCode);
+            }
+        }
+
+        public int Span => toCode.Youngest() - fromCode.Youngest()+1;
+
+        public override bool Equals(object obj)
+        {
+            if (obj is CodeRange c)
+                return c.toCode.Equals(toCode) && c.fromCode.Equals(fromCode) && c.childrenAsWell == childrenAsWell;
+            return base.Equals(obj);
+        }
+
+        public override string ToString()
+        {
+            return $"{fromCode} - {toCode}";
         }
     }
 }

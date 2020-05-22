@@ -72,6 +72,42 @@ namespace AFVC
             return Get(codePrefix) != null;
         }
 
+        public bool Contains(CodeRange range)
+        {
+            if (range == null)
+                return false;
+            else
+            {
+                CatalogCode counter = range.fromCode;
+                while (counter.Youngest() <= range.toCode.Youngest())
+                {
+                    if (Get(counter) != null)
+                        return true;
+                    counter = counter.Increment();
+                }
+
+                return false;
+            }
+        }
+        public bool Contains(CodeRange range,CodeRange usingCodeRange, int offset)
+        {
+            if (range == null)
+                return false;
+            else
+            {
+                CatalogCode counter1 = range.fromCode;
+                CatalogCode counter2 = usingCodeRange.fromCode+offset;
+                while (counter1.Youngest() <= range.toCode.Youngest())
+                {
+                    if (Contains(counter2)&&Contains(counter1))
+                        return true;
+                    counter1 = counter1.Increment();
+                    counter2 = counter2.Increment();
+                }
+
+                return false;
+            }
+        }
         public Catalog()
         {
             root = new CatalogEntry();
@@ -103,10 +139,12 @@ namespace AFVC
         {
             var ce = Get(code);
             if(ce==null||ce.children.Count==0)
-                return new CatalogCode(code.ToString()+".0");
+                return new CatalogCode(code.ToString()+(code.Equals(CatalogCode.current)?"":".")+"0");
             else
             {
                 int addition = ce.children.Max(c => c.codePrefix.Youngest())+1;
+                if(code.Equals(CatalogCode.current))
+                    return new CatalogCode(addition.ToString());
                 return new CatalogCode(code.ToString()+$".{addition}");
             }
         }
