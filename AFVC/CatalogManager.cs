@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections;
+﻿using ImageProcessor;
+using ImageProcessor.Imaging;
+using Pastel;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Windows.Automation.Peers;
-using ImageProcessor;
-using ImageProcessor.Imaging;
-using ImageProcessor.Processors;
-using Pastel;
 
 namespace AFVC
 {
@@ -24,30 +20,33 @@ namespace AFVC
         public static readonly string storage = "\\cards";
         public static readonly string tempFolder = "\\temp";
         public static readonly string tempFile = "\\temp.tiff";
-        public static readonly string[] imageFormats = new[] {".jpg", ".png", ".tif", ".bmp", ".gif",".jpeg"};
+        public static readonly string[] imageFormats = { ".jpg", ".png", ".tif", ".bmp", ".gif", ".jpeg" };
 
-        public static Color[] Colors = new Color[] {
+        public static Color[] Colors =
+        {
             Color.Crimson,
-            Color.FromArgb(213,254,119),
-            Color.FromArgb(57,240,119),
-            Color.FromArgb(0,201,167),
+            Color.FromArgb(213, 254, 119),
+            Color.FromArgb(57, 240, 119),
+            Color.FromArgb(0, 201, 167),
             Color.MediumPurple,
             Color.DarkMagenta,
             Color.Fuchsia,
             Color.Gold
         };
+
         public static string[] tasks =
         {
-            "Update Catalog", "View Catalog", "Add/Update","Shift", "Delete Folder", "Delete Card", "View Card(s)", "View Document",
-            "Backup","Rename/Move","Search","Open Folder","Clear Console", "Close"
+            "Update Catalog From Input", "View Catalog", "Add/Update", "Shift", "Delete Folder", "Delete Card", "View Card(s)",
+            "View Document",
+            "Backup", "Rename/Move", "Search", "Open Folder", "Clear Console", "Close"
         };
 
         private static readonly int offdist = 3;
-        private readonly int OPTIONS = tasks.Length;
         private readonly Catalog catalog;
 
 
         private readonly string folder;
+        private readonly int OPTIONS = tasks.Length;
 
 
         public CatalogManager(Catalog catalog, string folder)
@@ -73,14 +72,15 @@ namespace AFVC
             {
                 while (true)
                 {
-                    Console.WriteLine(
-                        "0 - Update Catalog from Input\n1 - View Catalog\n2 - Add/Update\n3 - Shift\n4 - Delete Folder\n5 - Delete Card\n6 - View Card(s)\n7 - View Document" +
-                        "\n8 - Backup\n9 - Rename/Move\n10 - Search\n11 - Open Folder\n12 - Clear Console\n13 - Close");
+                    for (int i = 0; i < tasks.Length; i++)
+                    {
+                        Console.WriteLine($"{i} - {tasks[i].Pastel(Color.OrangeRed)}");
+                    }
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
 
-                if (dec == 0 || dec == 4 || dec == 5|| dec== 8|| dec==9)
+                if (dec == 0 || dec == 4 || dec == 5 || dec == 8 || dec == 9)
                 {
                     Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
                     int decC;
@@ -151,20 +151,23 @@ namespace AFVC
         private void PromptShift()
         {
             Console.WriteLine("Please insert the range to shift along");
-            CodeRange orig = new CodeRange(ReadAnswer());
+            var orig = new CodeRange(ReadAnswer());
+            if(orig.fromCode.Equals(CatalogCode.current))
+                throw new CatalogError("Cannot shift the root");
             Console.WriteLine("Please insert by how much");
-            int dist = Int32.Parse(ReadAnswer());
-            CodeRange shifted = orig + dist;
-            if(catalog.Contains(shifted-orig,orig,(shifted-orig).fromCode.Youngest()-shifted.fromCode.Youngest()))
+            var dist = int.Parse(ReadAnswer());
+            var shifted = orig + dist;
+            if (catalog.Contains(shifted - orig, orig,
+                (shifted - orig).fromCode.Youngest() - shifted.fromCode.Youngest()))
                 throw new CatalogError($"Cannot shift {orig} by {dist}");
-            Rename(orig,shifted);
+            Rename(orig, shifted);
         }
 
         private void PromptOpenFolder()
         {
             Console.WriteLine("Insert the code of the folder to open:");
-            CatalogCode code = new CatalogCode(ReadAnswer());
-            if(!catalog.Contains(code))
+            var code = new CatalogCode(ReadAnswer());
+            if (!catalog.Contains(code))
                 throw new CatalogError($"{code} does not exist");
             OpenFileProcess(folder + storage + FolderFor(code));
         }
@@ -172,10 +175,10 @@ namespace AFVC
         private void PromptViewDocument()
         {
             Console.WriteLine("Insert the code of the file to view:");
-            CatalogCode code = new CatalogCode(ReadAnswer());
-            if(code.Equals(CatalogCode.current))
+            var code = new CatalogCode(ReadAnswer());
+            if (code.Equals(CatalogCode.current))
                 throw new CatalogError("Cannot open root");
-            if(!IsFile(code,out string path))
+            if (!IsFile(code, out var path))
                 throw new CatalogError($"{code} is not a file");
             OpenFileProcess(path);
         }
@@ -183,11 +186,8 @@ namespace AFVC
         private void PromptSearch()
         {
             Console.WriteLine("Insert the phrase to search:");
-            List<CatalogEntry> entries = catalog.Search(ReadAnswer());
-            foreach (var entry in entries)
-            {
-                Console.WriteLine(entry.FancifyEntry());
-            }
+            var entries = catalog.Search(ReadAnswer());
+            foreach (var entry in entries) Console.WriteLine(entry.FancifyEntry());
 
             Console.WriteLine();
         }
@@ -195,17 +195,13 @@ namespace AFVC
         private void PromptRename()
         {
             Console.WriteLine("Please insert the original code");
-            CatalogCode from = new CatalogCode(ReadAnswer());
+            var from = new CatalogCode(ReadAnswer());
             Console.WriteLine("Please insert the new code");
-            CatalogCode to = new CatalogCode(ReadAnswer());
+            var to = new CatalogCode(ReadAnswer());
             if (!IsRenameConflict(from, to))
-            {
                 RenameAndSave(from, to);
-            }
             else
-            {
                 Console.WriteLine("Unable to rename");
-            }
         }
 
         private void RenameAndSave(CatalogCode a, CatalogCode b)
@@ -225,18 +221,11 @@ namespace AFVC
             var entry = catalog.Get(a);
             var title = entry.name;
             foreach (var child in entry.children)
-            {
-                Rename(child.codePrefix,b+CatalogCode.Relative(a,child.codePrefix));
-            }
+                Rename(child.codePrefix, b + CatalogCode.Relative(a, child.codePrefix));
             if (!Directory.Exists(folder + storage + FolderFor(b)))
                 Directory.CreateDirectory(folder + storage + FolderFor(b));
-            if (IsFile(a,out string oldPath,out var x))
-            {
-                SetFileCode(oldPath, b);
-            }
+            if (IsFile(a, out var oldPath, out var x)) SetFileCode(oldPath, b);
             catalog.Update(b, title);
-            
-
         }
 
         private void Rename(CodeRange a, CodeRange b)
@@ -246,24 +235,25 @@ namespace AFVC
             while (true)
             {
                 if (a.Span == 1)
+                {
                     RenameAndSave(a.fromCode, b.fromCode);
+                }
                 else
                 {
                     if (a.fromCode.Youngest() < b.fromCode.Youngest())
                     {
                         RenameAndSave(a.toCode, b.toCode);
-                        a = new CodeRange(a.fromCode, a.toCode + (-1));
-                        b = new CodeRange(b.fromCode, b.toCode + (-1));
+                        a = new CodeRange(a.fromCode, a.toCode + -1);
+                        b = new CodeRange(b.fromCode, b.toCode + -1);
                         continue;
                     }
-                    else
-                    {
-                        RenameAndSave(a.fromCode, b.fromCode);
-                        a = new CodeRange(a.fromCode + (1), a.toCode);
-                        b = new CodeRange(b.fromCode + (1), b.toCode);
-                        continue;
-                    }
+
+                    RenameAndSave(a.fromCode, b.fromCode);
+                    a = new CodeRange(a.fromCode + 1, a.toCode);
+                    b = new CodeRange(b.fromCode + 1, b.toCode);
+                    continue;
                 }
+
                 break;
             }
         }
@@ -276,15 +266,11 @@ namespace AFVC
         private void PromptBackUp()
         {
             Console.WriteLine("Please insert where to backup to: ");
-            string path = MorePaths.getFolderPath();
-            if (path == null||path ==folder)
-            {
+            var path = MorePaths.getFolderPath();
+            if (path == null || path == folder)
                 Console.WriteLine("Failed to back up");
-            }
             else
-            {
                 BackUp(path);
-            }
         }
 
         private void BackUp(string newFolder)
@@ -301,15 +287,11 @@ namespace AFVC
                 Directory.CreateDirectory(to);
             foreach (var entry in Directory.EnumerateFileSystemEntries(from))
             {
-                string diff = entry.RemoveFirst(from.Length);
+                var diff = entry.RemoveFirst(from.Length);
                 if (Directory.Exists(entry))
-                {
-                    CopyFolder(entry,to+diff);
-                }
+                    CopyFolder(entry, to + diff);
                 else
-                {
-                    File.Copy(entry,to+diff);
-                }
+                    File.Copy(entry, to + diff);
             }
         }
 
@@ -332,75 +314,71 @@ namespace AFVC
             }
         }
 
-        private string TreePrint(CatalogEntry entry, int depth=-1,int offset = 0)
+        private string TreePrint(CatalogEntry entry, int depth = -1, int offset = 0)
         {
             if (depth == 0)
                 return "";
-            bool isFile = IsFile(entry.codePrefix, out string path, out bool isImage);
+            var isFile = IsFile(entry.codePrefix, out var path, out var isImage);
             var thisString = "|-" + entry.FancifyEntry() + " " +
-                             (isFile? " ".PastelBg(isImage? Color.DodgerBlue:Color.OrangeRed) : "") + "\n";
+                             (isFile ? " ".PastelBg(isImage ? Color.DodgerBlue : Color.OrangeRed) : "") + "\n";
             if (depth > 1 || depth == -1)
-            {
                 foreach (var child in entry.children)
                     thisString += new string(' ', offset + offdist) +
                                   TreePrint(child, depth == -1 ? -1 : depth - 1, offset + offdist);
-
-            }
             return thisString;
         }
 
         private void ViewCards()
         {
-            if(File.Exists(folder+tempFile))
+            if (File.Exists(folder + tempFile))
                 File.Delete(folder + tempFolder + tempFile);
 
             Console.WriteLine("Insert the codes to " + "view".Pastel(Color.DeepSkyBlue));
-            Console.WriteLine("To create a range, use \"-\" between codes, use a \".\" at the end of codes to force not going down, and seperate groupings with a \",\"");
-            List<CodeRange> codeRanges = CodeRange.Parse(ReadAnswer());
-            List<CatalogCode> cards = CardsInRange(codeRanges);
+            Console.WriteLine(
+                "To create a range, use \"-\" between codes, use a \".\" at the end of codes to force not going down, and seperate groupings with a \",\"");
+            var codeRanges = CodeRange.Parse(ReadAnswer());
+            var cards = CardsInRange(codeRanges);
             if (cards.Count != 0)
             {
-                foreach (var catalogCode in cards)
-                {
-                    Console.WriteLine(catalogCode.ToString().Pastel(Color.Aqua));
-                }
+                foreach (var catalogCode in cards) Console.WriteLine(catalogCode.ToString().Pastel(Color.Aqua));
 
                 Console.WriteLine();
                 GenerateCardView(cards);
                 OpenFileProcess(folder + tempFolder + tempFile);
             }
             else
+            {
                 Console.WriteLine("No card exists.");
+            }
         }
 
         private List<CatalogCode> CardsInRange(List<CodeRange> codeRanges)
         {
-            List<CatalogCode> output = new List<CatalogCode>();
+            var output = new List<CatalogCode>();
             foreach (var codeRange in codeRanges)
-            {
                 foreach (var child in catalog.Get(codeRange.fromCode.parent).children)
                 {
-                    CatalogCode temp = child.codePrefix;
+                    var temp = child.codePrefix;
                     if (child.codePrefix.CompareTo(codeRange.fromCode) >= 0 &&
                         child.codePrefix.CompareTo(codeRange.toCode) <= 0)
                     {
-                        IsFile(temp, out string p, out bool isImage);
+                        IsFile(temp, out var p, out var isImage);
                         if (isImage)
                             output.Add(temp);
-                        if(codeRange.childrenAsWell)
+                        if (codeRange.childrenAsWell)
                             output.AddRange(CardsOf(catalog.Get(temp)));
                     }
                 }
-            }
+
             return output;
         }
 
         private IEnumerable<CatalogCode> CardsOf(CatalogEntry temp)
         {
-            List<CatalogCode> output = new List<CatalogCode>();
+            var output = new List<CatalogCode>();
             foreach (var child in temp.children)
             {
-                IsFile(child.codePrefix, out string p, out bool isImage);
+                IsFile(child.codePrefix, out var p, out var isImage);
                 if (isImage)
                     output.Add(child.codePrefix);
                 output.AddRange(CardsOf(child));
@@ -411,38 +389,35 @@ namespace AFVC
 
         private void GenerateCardView(List<CatalogCode> codes)
         {
-            ImageFactory output = new ImageFactory().Load(new Bitmap(1, 1));
+            var output = new ImageFactory().Load(new Bitmap(1, 1));
             foreach (var code in codes)
             {
-                string path = CardPath(code);
+                var path = CardPath(code);
                 var temp = new ImageLayer();
                 temp.Image = Image.FromFile(path);
-                temp.Position = new Point(0,output.Image.Height);
-                ResizeLayer rl = new ResizeLayer(new Size(Math.Max(temp.Image.Width, output.Image.Width),
-                    output.Image.Height + temp.Image.Height),ResizeMode.BoxPad,AnchorPosition.TopLeft);
+                temp.Position = new Point(0, output.Image.Height);
+                var rl = new ResizeLayer(new Size(Math.Max(temp.Image.Width, output.Image.Width),
+                    output.Image.Height + temp.Image.Height), ResizeMode.BoxPad, AnchorPosition.TopLeft);
                 output.Resize(rl);
                 output.Overlay(temp);
                 temp.Dispose();
             }
-            output.Image.Save(folder+tempFolder+tempFile,ImageFormat.Tiff);
+
+            output.Image.Save(folder + tempFolder + tempFile, ImageFormat.Tiff);
             output.Dispose();
         }
 
         private void PrintCatalog()
         {
             Console.WriteLine("Insert the code you want to display (. for all):");
-            string response = ReadAnswer();
-            CatalogCode code = new CatalogCode(response);
+            var response = ReadAnswer();
+            var code = new CatalogCode(response);
 
             Console.WriteLine("And to what depth (-1 for all)?");
-            if (!Int32.TryParse(ReadAnswer(),out int depth))
-            {
-                depth = -1;
-            }
-            if (code.Equals(CatalogCode.current)&&depth>=1)
+            if (!int.TryParse(ReadAnswer(), out var depth)) depth = -1;
+            if (code.Equals(CatalogCode.current) && depth >= 1)
                 depth++;
             Console.WriteLine(TreePrint(catalog.Get(code), depth));
-            
         }
 
         private bool IsFile(CatalogCode code, out string path, out bool b)
@@ -456,12 +431,15 @@ namespace AFVC
                 b = imageFormats.Contains(Path.GetExtension(path));
                 return path != default;
             }
+
             return false;
         }
-        private bool IsFile(CatalogCode code,out string path)
+
+        private bool IsFile(CatalogCode code, out string path)
         {
             return IsFile(code, out path, out var b);
         }
+
         private bool IsFile(CatalogCode code)
         {
             return IsFile(code, out var p);
@@ -469,7 +447,7 @@ namespace AFVC
 
         private string CardPath(CatalogCode code)
         {
-            string testFolder = folder + storage + FolderFor(code);
+            var testFolder = folder + storage + FolderFor(code);
             return Directory.EnumerateFiles(testFolder)
                 .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == code.ToString());
         }
@@ -482,7 +460,7 @@ namespace AFVC
                 var code = new CatalogCode(ReadAnswer());
                 catalog.Delete(code);
                 DeleteFolderOfCode(code);
-                Save(folder+fileLoc);
+                Save(folder + fileLoc);
             }
             catch (Exception e)
             {
@@ -495,9 +473,9 @@ namespace AFVC
             Directory.Delete(folder + storage + FolderFor(code), true);
         }
 
-        private void AddUpdateRecord() 
+        private void AddUpdateRecord()
         {
-            CatalogCode code = PromptCodeOrNewChild("Insert the new code to add");
+            var code = PromptCodeOrNewChild("Insert the new code to add");
             var title = PromptNewOrOldTitle(code);
             if (!catalog.Contains(code)) CreateFolderFor(code);
             catalog.Update(code, title);
@@ -506,15 +484,15 @@ namespace AFVC
 
         private string PromptNewOrOldTitle(CatalogCode code)
         {
-            YNAnswer response = YNAnswer.No;
-            string title = "";
+            var response = YNAnswer.No;
+            var title = "";
             if (catalog.Contains(code))
             {
                 title = catalog.Get(code).name;
                 response = AskYNQuestion($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
             }
 
-            if (response==YNAnswer.No)
+            if (response == YNAnswer.No)
             {
                 Console.WriteLine($"Insert the title of {code.ToString().Pastel(Color.OrangeRed)}");
                 title = ReadAnswer();
@@ -526,7 +504,7 @@ namespace AFVC
         private YNAnswer AskYNQuestion(string s)
         {
             Console.WriteLine(s);
-            string response = ReadAnswer();
+            var response = ReadAnswer();
             if (response.ToLower() == "y" || response.ToLower() == "yes")
                 return YNAnswer.Yes;
             return YNAnswer.No;
@@ -550,7 +528,7 @@ namespace AFVC
             {
                 var p = PromptOpening(pic);
                 var code = PromptCodeOrNewChild("Set the code for this file");
-                string title = PromptNewOrOldTitle(code);
+                var title = PromptNewOrOldTitle(code);
 
                 CreateFolderFor(code);
                 SetFileCode(pic, code);
@@ -564,15 +542,16 @@ namespace AFVC
         private CatalogCode PromptCodeOrNewChild(string promptMessage)
         {
             Console.WriteLine(promptMessage);
-            string input = ReadAnswer();
+            var input = ReadAnswer();
             if (input == "")
                 throw new CatalogError("Cannot alter the Root");
 
             if (input.EndsWith("."))
             {
-                CatalogCode code = new CatalogCode(input.RemoveLast(1));
+                var code = new CatalogCode(input.RemoveLast(1));
                 return catalog.NewChild(code);
             }
+
             return new CatalogCode(input);
         }
 
@@ -589,8 +568,9 @@ namespace AFVC
         private Process PromptOpening(string pic)
         {
             Process p = null;
-            YNAnswer response = AskYNQuestion($"Would you like to see {Path.GetFileName(pic).Pastel(Color.Aquamarine)}? (Y/N)");
-            if (response==YNAnswer.Yes)
+            var response =
+                AskYNQuestion($"Would you like to see {Path.GetFileName(pic).Pastel(Color.Aquamarine)}? (Y/N)");
+            if (response == YNAnswer.Yes)
                 p = OpenFileProcess(pic);
             return p;
         }
@@ -633,9 +613,11 @@ namespace AFVC
 
     internal class CodeRange
     {
+        internal bool childrenAsWell = true;
         internal CatalogCode fromCode;
         internal CatalogCode toCode;
-        internal bool childrenAsWell = true;
+
+        public int Span => toCode.Youngest() - fromCode.Youngest() + 1;
 
         public CodeRange(CatalogCode f, CatalogCode t, bool caw = true)
         {
@@ -643,10 +625,11 @@ namespace AFVC
             toCode = t;
             childrenAsWell = caw;
         }
+
         public CodeRange(string range)
         {
-            string[] codes = range.Split('-');
-            int l1 = codes[0].Length;
+            var codes = range.Split('-');
+            var l1 = codes[0].Length;
             if (l1 >= 2 && codes[0][l1 - 1] == '.')
             {
                 childrenAsWell = false;
@@ -655,23 +638,21 @@ namespace AFVC
 
             fromCode = new CatalogCode(codes[0]);
             if (codes.Length == 1)
+            {
                 toCode = fromCode;
+            }
             else
             {
-                toCode = new CatalogCode(childrenAsWell?codes[1]:codes[1].RemoveLast(1));
+                toCode = new CatalogCode(childrenAsWell ? codes[1] : codes[1].RemoveLast(1));
                 if (!CatalogCode.SameFolder(fromCode, toCode) || fromCode.CompareTo(toCode) > 0)
                     throw new CatalogError("Invalid code range.");
             }
-            
         }
 
         public static List<CodeRange> Parse(string readAnswer)
         {
-            List<CodeRange> output = new List<CodeRange>();
-            foreach (var range in readAnswer.Split(','))
-            {
-                output.Add(new CodeRange(range));
-            }
+            var output = new List<CodeRange>();
+            foreach (var range in readAnswer.Split(',')) output.Add(new CodeRange(range));
 
             return output;
         }
@@ -683,26 +664,23 @@ namespace AFVC
 
         public static CodeRange operator -(CodeRange a, CodeRange b)
         {
-            if(a.Span!=b.Span ||!a.fromCode.parent.Equals(b.fromCode.parent)||a.childrenAsWell!=b.childrenAsWell)
+            if (a.Span != b.Span || !a.fromCode.parent.Equals(b.fromCode.parent) ||
+                a.childrenAsWell != b.childrenAsWell)
                 throw new CatalogError($"Cannot find difference between {a} and {b}");
             if (a.Equals(b))
                 return null;
             CatalogCode temp;
             if (a.fromCode.Youngest() < b.fromCode.Youngest())
-            { 
+            {
                 temp = a.fromCode.parent +
-                     new CatalogCode((Math.Min(a.toCode.Youngest(), b.fromCode.Youngest()-1)).ToString());
+                       new CatalogCode(Math.Min(a.toCode.Youngest(), b.fromCode.Youngest() - 1).ToString());
                 return new CodeRange(a.fromCode, temp);
             }
-            else
-            { 
-                temp = a.fromCode.parent +
-                     new CatalogCode((Math.Max(a.fromCode.Youngest(), b.toCode.Youngest()+1)).ToString());
-                return new CodeRange(temp, a.toCode);
-            }
-        }
 
-        public int Span => toCode.Youngest() - fromCode.Youngest()+1;
+            temp = a.fromCode.parent +
+                   new CatalogCode(Math.Max(a.fromCode.Youngest(), b.toCode.Youngest() + 1).ToString());
+            return new CodeRange(temp, a.toCode);
+        }
 
         public override bool Equals(object obj)
         {
