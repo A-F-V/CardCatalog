@@ -74,7 +74,7 @@ namespace AFVC
                 {
                     for (int i = 0; i < tasks.Length; i++)
                     {
-                        Console.WriteLine($"{i} - {tasks[i].Pastel(Color.OrangeRed)}");
+                        Console.WriteLine($"{i} - {tasks[i].Pastel(i%2==0?Color.DeepSkyBlue:Color.DarkOrange)}");
                     }
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
@@ -187,9 +187,34 @@ namespace AFVC
         {
             Console.WriteLine("Insert the phrase to search:");
             var entries = catalog.Search(ReadAnswer());
-            foreach (var entry in entries) Console.WriteLine(entry.FancifyEntry());
+            for (int x = 0; x < entries.Count; x++)
+            {
+                Console.WriteLine($"{x}) {entries[x].FancifyEntry()}");
+            }
 
-            Console.WriteLine();
+            if (entries.Count != 0)
+            {
+                YNAnswer qa = AskYNQuestion("Would you like to open one of the entries?");
+                if (qa == YNAnswer.Yes)
+                {
+                    Console.WriteLine("Insert the number to view");
+                    int dec = Int32.Parse(ReadAnswer());
+                    if (dec < 0 || dec >=entries.Count)
+                        throw new CatalogError($"Cannot open number {dec}");
+                    else
+                    {
+                        CatalogEntry e = entries[dec];
+                        if (IsFile(e.codePrefix, out string path))
+                            OpenFileProcess(path);
+                        else
+                            OpenFileProcess(folder + storage + FolderFor(e.codePrefix));
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("No entries found...");
+            }
         }
 
         private void PromptRename()
