@@ -191,38 +191,38 @@ namespace AFVC
 
             if (entries.Count != 0)
             {
-                var qa = AskYNQuestion("Would you like to access one of the entries?");
-                if (qa == YNAnswer.Yes)
+
+                Console.WriteLine("Would you like to " + "0) open ".Pastel(Color.Aqua) +
+                                  "1) edit ".Pastel(Color.OrangeRed) + "2) view catalog from ".Pastel(Color.Aqua) +
+                                  "3) back ".Pastel(Color.OrangeRed) +
+                                  "one of the entries?");
+                var dec = int.Parse(ReadAnswer());
+                CatalogEntry e = null;
+                if (dec <= 2 && dec >= 0)
                 {
                     Console.WriteLine("Insert the number to view");
                     var num = int.Parse(ReadAnswer());
-                    if (num < 0 || num >= entries.Count)
-                    {
-                        throw new CatalogError($"Cannot aceess number {num}");
-                    }
-
-                    var e = entries[num];
-                    Console.WriteLine("Would you like to " + "0) open ".Pastel(Color.Aqua) +
-                                      "1) edit ".Pastel(Color.OrangeRed) + "2) back ".Pastel(Color.Aqua) +
-                                      "one of the entries?");
-                    var dec = int.Parse(ReadAnswer());
-                    switch (dec)
-                    {
-                        case 0:
-                            if (IsFile(e.codePrefix, out var path))
-                                OpenFileProcess(path);
-                            else
-                                OpenFileProcess(folder + storage + FolderFor(e.codePrefix));
-                            break;
-                        case 1:
-                            AddUpdateRecord(e.codePrefix);
-                            break;
-                    }
+                    if (num < 0 || num >= entries.Count) throw new CatalogError($"Cannot aceess number {num}");
+                    e = entries[num];
                 }
-            }
-            else
-            {
-                Console.WriteLine("No entries found...");
+
+                switch (dec)
+                {
+                    case 0:
+                        if (IsFile(e.codePrefix, out var path))
+                            OpenFileProcess(path);
+                        else
+                            OpenFileProcess(folder + storage + FolderFor(e.codePrefix));
+                        break;
+                    case 1:
+                        AddUpdateRecord(e.codePrefix);
+                        break;
+                    case 2:
+                        Console.WriteLine("And to what depth (-1 for all)?");
+                        if (!int.TryParse(ReadAnswer(), out var depth)) depth = -1;
+                        Console.WriteLine(TreePrint(e, depth));
+                        break;
+                }
             }
         }
 
@@ -352,14 +352,14 @@ namespace AFVC
         {
             var isFile = IsFile(entry.codePrefix, out var path, out var isImage);
             return entry.FancifyEntry() + " " +
-                             (isFile ? " ".PastelBg(isImage ? Color.DodgerBlue : Color.OrangeRed) : "");
+                   (isFile ? " ".PastelBg(isImage ? Color.DodgerBlue : Color.OrangeRed) : "");
         }
 
         private string TreePrint(CatalogEntry entry, int depth = -1, int offset = 0)
         {
             if (depth == 0)
                 return "";
-            string thisString = "|-" + FancyEntryWithFileFlag(entry) + "\n";
+            var thisString = "|-" + FancyEntryWithFileFlag(entry) + "\n";
             if (depth > 1 || depth == -1)
                 foreach (var child in entry.children)
                     thisString += new string(' ', offset + offdist) +
