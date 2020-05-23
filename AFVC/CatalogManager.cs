@@ -563,6 +563,8 @@ namespace AFVC
 
         private void UpdateCatalogFromInput()
         {
+            Console.Clear();
+            PrintCatalog();
             foreach (var pic in Directory.EnumerateFiles(folder + inputFolder))
             {
                 var p = PromptOpening(pic);
