@@ -20,8 +20,8 @@ namespace AFVC
 
         public CatalogCode(string codeOriginal)
         {
-            original = codeOriginal;
-            generateCodePattern(codeOriginal);
+            original = codeOriginal.RemoveNonNumeric();
+            generateCodePattern(original);
         }
 
         private void generateCodePattern(string codeOriginal)

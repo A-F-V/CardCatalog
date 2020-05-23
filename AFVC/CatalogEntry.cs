@@ -90,7 +90,7 @@ namespace AFVC
 
         public string FancifyEntry()
         {
-            return $"{this.codePrefix.ToString().Pastel(Color.OrangeRed)}." +
+            return $"{this.codePrefix.ToString().Pastel(Color.OrangeRed)}" +
                    $" {(this.name == null ? string.Empty : this.name.Pastel(CatalogManager.Colors[Math.Min(this.codePrefix.Depth - 1, CatalogManager.Colors.Length - 1)]))}";
         }
     }
