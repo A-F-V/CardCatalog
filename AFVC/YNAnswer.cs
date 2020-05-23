@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AFVC
+﻿namespace AFVC
 {
-    enum YNAnswer
+    internal enum YNAnswer
     {
         Yes,
         No

@@ -43,14 +43,7 @@ namespace AFVC
                     if (path == null)
                         return;
 
-                    if (dec == 0)
-                    {
-                        m = CatalogManager.Setup(path);
-                    }
-                    else
-                    {
-                        m = new CatalogManager(Loader.loaderFromFolder(path), path);
-                    }
+                    m = dec == 0 ? CatalogManager.Setup(path) : new CatalogManager(Loader.loaderFromFolder(path), path);
 
                     Console.Clear();
                     m.Run();
