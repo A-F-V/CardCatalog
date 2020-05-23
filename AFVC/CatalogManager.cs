@@ -110,7 +110,7 @@ namespace AFVC
                             PromptDeleteFolder();
                             break;
                         case 5:
-                            DeleteFile();
+                            PromptDeleteFile();
                             break;
                         case 6:
                             ViewCards();
@@ -191,7 +191,6 @@ namespace AFVC
 
             if (entries.Count != 0)
             {
-
                 Console.WriteLine("Would you like to " + "0) open ".Pastel(Color.Aqua) +
                                   "1) edit ".Pastel(Color.OrangeRed) + "2) view catalog from ".Pastel(Color.Aqua) +
                                   "3) back ".Pastel(Color.OrangeRed) +
@@ -335,16 +334,21 @@ namespace AFVC
             Directory.CreateDirectory(newFolder);
         }
 
-        private void DeleteFile()
+        private void PromptDeleteFile()
         {
             Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
             var code = new CatalogCode(ReadAnswer());
             if (IsFile(code))
             {
-                var path = Directory.EnumerateFiles(folder + storage + FolderFor(code))
-                    .FirstOrDefault(s => s.Contains(code.ToString()));
-                if (path != default)
-                    File.Delete(path);
+                var response =
+                    AskYNQuestion($"Are you sure you want to delete {catalog.Get(code).FancifyEntry()}?");
+                if (response == YNAnswer.Yes)
+                {
+                    var path = Directory.EnumerateFiles(folder + storage + FolderFor(code))
+                        .FirstOrDefault(s => s.Contains(code.ToString()));
+                    if (path != default)
+                        File.Delete(path);
+                }
             }
         }
 
@@ -352,7 +356,7 @@ namespace AFVC
         {
             var isFile = IsFile(entry.codePrefix, out var path, out var isImage);
             return entry.FancifyEntry() + " " +
-                   (isFile ? " ".PastelBg(isImage ? Color.DodgerBlue : Color.OrangeRed) : "");
+                   (isFile ? "\u2588".Pastel(isImage ? Color.DodgerBlue : Color.OrangeRed) : "");
         }
 
         private string TreePrint(CatalogEntry entry, int depth = -1, int offset = 0)
@@ -493,17 +497,15 @@ namespace AFVC
 
         private void PromptDeleteFolder()
         {
-            try
+            Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
+            var code = new CatalogCode(ReadAnswer());
+            var response =
+                AskYNQuestion($"Are you sure you want to delete the folder {catalog.Get(code).FancifyEntry()}?");
+            if (response == YNAnswer.Yes)
             {
-                Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
-                var code = new CatalogCode(ReadAnswer());
                 catalog.Delete(code);
                 DeleteFolderOfCode(code);
                 Save(folder + fileLoc);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("ERROR".PastelBg(Color.Red) + "IN DELETING");
             }
         }
 
@@ -563,21 +565,29 @@ namespace AFVC
 
         private void UpdateCatalogFromInput()
         {
-            Console.Clear();
-            PrintCatalog();
-            foreach (var pic in Directory.EnumerateFiles(folder + inputFolder))
+            var pictures = Directory.GetFiles(folder + inputFolder);
+            if (pictures.Length != 0)
             {
-                var p = PromptOpening(pic);
-                var code = PromptCodeOrNewChild("Set the code for this file");
-                var title = PromptNewOrOldTitle(code);
+                Console.Clear();
+                Console.WriteLine(TreePrint(catalog.root));
+                foreach (var pic in Directory.GetFiles(folder + inputFolder))
+                {
+                    var p = PromptOpening(pic);
+                    var code = PromptCodeOrNewChild("Set the code for this file");
+                    var title = PromptNewOrOldTitle(code);
 
-                CreateFolderFor(code);
-                SetFileCode(pic, code);
-                catalog.Update(code, title);
-                p?.Kill();
+                    CreateFolderFor(code);
+                    SetFileCode(pic, code);
+                    catalog.Update(code, title);
+                    p?.Kill();
+                }
+
+                Save(folder + fileLoc);
             }
-
-            Save(folder + fileLoc);
+            else
+            {
+                Console.WriteLine("No files to upload\n");
+            }
         }
 
         private CatalogCode PromptCodeOrNewChild(string promptMessage)
