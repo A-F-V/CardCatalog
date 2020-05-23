@@ -1,32 +1,33 @@
-﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AFVC
 {
-    partial class Catalog
+    internal class Catalog
     {
         public CatalogEntry root;
+
         public Catalog(Dictionary<string, string> dict)
         {
             root = new CatalogEntry();
             GenerateCatalog(dict);
         }
 
+        public Catalog()
+        {
+            root = new CatalogEntry();
+        }
+
         private void GenerateCatalog(Dictionary<string, string> dict)
         {
-            foreach (var key in dict.Keys)
+            foreach (string key in dict.Keys)
             {
                 CatalogCode code = new CatalogCode(key);
                 Add(code, dict[key]);
             }
         }
 
-        public void Update(CatalogCode code, String title)
+        public void Update(CatalogCode code, string title)
         {
             if (Contains(code))
                 Set(code, title);
@@ -42,10 +43,8 @@ namespace AFVC
                 root.Add(code, s);
                 return;
             }
-            if (!Contains(parent))
-            {
-                Add(parent, "");
-            }
+
+            if (!Contains(parent)) Add(parent, "");
             Get(parent).Add(code, s);
         }
 
@@ -61,9 +60,7 @@ namespace AFVC
                 if (code.Depth == 1)
                     root.children.RemoveAll(e => e.codePrefix.Equals(code));
                 else
-                {
                     Get(code.parent).children.RemoveAll(e => e.codePrefix.Equals(code));
-                }
             }
         }
 
@@ -74,43 +71,34 @@ namespace AFVC
 
         public bool Contains(CodeRange range)
         {
-            if (range == null)
-                return false;
-            else
-            {
-                CatalogCode counter = range.fromCode;
-                while (counter.Youngest() <= range.toCode.Youngest())
-                {
-                    if (Get(counter) != null)
-                        return true;
-                    counter = counter.Increment();
-                }
+            if (range == null) return false;
 
-                return false;
-            }
-        }
-        public bool Contains(CodeRange range,CodeRange usingCodeRange, int offset)
-        {
-            if (range == null)
-                return false;
-            else
+            CatalogCode counter = range.fromCode;
+            while (counter.Youngest() <= range.toCode.Youngest())
             {
-                CatalogCode counter1 = range.fromCode;
-                CatalogCode counter2 = usingCodeRange.fromCode+offset;
-                while (counter1.Youngest() <= range.toCode.Youngest())
-                {
-                    if (Contains(counter2)&&Contains(counter1))
-                        return true;
-                    counter1 = counter1.Increment();
-                    counter2 = counter2.Increment();
-                }
-
-                return false;
+                if (Get(counter) != null)
+                    return true;
+                counter = counter.Increment();
             }
+
+            return false;
         }
-        public Catalog()
+
+        public bool Contains(CodeRange range, CodeRange usingCodeRange, int offset)
         {
-            root = new CatalogEntry();
+            if (range == null) return false;
+
+            CatalogCode counter1 = range.fromCode;
+            CatalogCode counter2 = usingCodeRange.fromCode + offset;
+            while (counter1.Youngest() <= range.toCode.Youngest())
+            {
+                if (Contains(counter2) && Contains(counter1))
+                    return true;
+                counter1 = counter1.Increment();
+                counter2 = counter2.Increment();
+            }
+
+            return false;
         }
 
 
@@ -122,10 +110,7 @@ namespace AFVC
         public List<string> Serialize()
         {
             List<string> output = new List<string>();
-            foreach (var child in root.children)
-            {
-                output.AddRange(child.Serialize());
-            }
+            foreach (CatalogEntry child in root.children) output.AddRange(child.Serialize());
 
             return output;
         }
@@ -137,41 +122,45 @@ namespace AFVC
 
         public CatalogCode NewChild(CatalogCode code)
         {
-            var ce = Get(code);
-            if(ce==null||ce.children.Count==0)
-                return new CatalogCode(code.ToString()+(code.Equals(CatalogCode.current)?"":".")+"0");
+            CatalogEntry ce = Get(code);
+            if (ce == null || ce.children.Count == 0)
+                return new CatalogCode(code + (code.Equals(CatalogCode.current) ? "" : ".") + "0");
+
+            int max = ce.children.Max(c => c.codePrefix.Youngest());
+            int addition = 0;
+            if (max + 1 == ce.children.Count)
+            {
+                addition = max + 1;
+            }
             else
             {
-                int max = ce.children.Max(c => c.codePrefix.Youngest());
-                int addition=0;
-                if (max+1 == ce.children.Count)
-                    addition = max + 1;
+                List<CatalogEntry> children = ce.children;
+                if (children[0].codePrefix.Youngest() != 0)
+                {
+                    addition = 0;
+                }
                 else
                 {
-                    List<CatalogEntry> children = ce.children;
-                    if (children[0].codePrefix.Youngest() != 0)
-                        addition = 0;
-                    else
+                    CatalogCode prev = children[0].codePrefix;
+                    int pos = 1;
+                    while (pos < children.Count)
                     {
-                        CatalogCode prev = children[0].codePrefix;
-                        int pos = 1;
-                        while (pos < children.Count)
+                        CatalogCode comp = children[pos].codePrefix;
+                        if (comp.Youngest() - prev.Youngest() != 1)
                         {
-                            CatalogCode comp = children[pos].codePrefix;
-                            if (comp.Youngest() - prev.Youngest() != 1)
-                            {
-                                addition = prev.Youngest() + 1;
-                                break;
-                            }
-                            prev = comp;
-                            pos++;
+                            addition = prev.Youngest() + 1;
+                            break;
                         }
+
+                        prev = comp;
+                        pos++;
                     }
                 }
-                if(code.Equals(CatalogCode.current))
-                    return new CatalogCode(addition.ToString());
-                return new CatalogCode(code.ToString()+$".{addition}");
             }
+
+            if (code.Equals(CatalogCode.current))
+                return new CatalogCode(addition.ToString());
+            return new CatalogCode(code + $".{addition}");
         }
     }
 }

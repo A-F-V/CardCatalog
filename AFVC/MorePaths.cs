@@ -1,24 +1,24 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace AFVC
 {
-    class MorePaths
+    internal class MorePaths
     {
-
         public static string getFolderPath()
         {
             string selectedPath = null;
-            var t = new Thread((ThreadStart)(() =>
+            Thread t = new Thread(() =>
             {
                 FolderBrowserDialog fbd = new FolderBrowserDialog();
-                fbd.RootFolder = System.Environment.SpecialFolder.MyComputer;
+                fbd.RootFolder = Environment.SpecialFolder.MyComputer;
                 fbd.ShowNewFolderButton = true;
                 if (fbd.ShowDialog() == DialogResult.Cancel)
                     return;
 
                 selectedPath = fbd.SelectedPath;
-            }));
+            });
 
             t.SetApartmentState(ApartmentState.STA);
             t.Start();

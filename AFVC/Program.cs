@@ -1,18 +1,10 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System;
 
 namespace AFVC
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             CatalogManager m;
             if (args.Length != 0)
@@ -31,13 +23,12 @@ namespace AFVC
                 {
                     Console.WriteLine("0 - New Card System\n1 - Load Card System\n2 - Close");
                     s = Console.ReadLine();
-
-                } while (!Int32.TryParse(s, out dec));
+                } while (!int.TryParse(s, out dec));
 
                 if (dec == 0 || dec == 1)
                 {
-                    var fileContent = string.Empty;
-                    var filePath = string.Empty;
+                    string fileContent = string.Empty;
+                    string filePath = string.Empty;
 
                     string path = MorePaths.getFolderPath();
                     if (path == null)

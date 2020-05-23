@@ -1,13 +1,14 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 
 namespace AFVC
 {
-    static class StringExtensions
+    internal static class StringExtensions
     {
-        private static char[] numeric = new char[] {
-            '.','0','1','2','3','4','5','6','7','8','9'
+        private static readonly char[] numeric =
+        {
+            '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
         };
+
         public static string RemoveLast(this string s, int characters)
         {
             return s.Remove(s.Length - characters);
@@ -20,7 +21,7 @@ namespace AFVC
 
         public static string RemoveNonNumeric(this string s)
         {
-            return String.Concat(s.Where(c=>numeric.Contains(c)));
+            return string.Concat(s.Where(c => numeric.Contains(c)));
         }
     }
 }
