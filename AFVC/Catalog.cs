@@ -142,7 +142,32 @@ namespace AFVC
                 return new CatalogCode(code.ToString()+(code.Equals(CatalogCode.current)?"":".")+"0");
             else
             {
-                int addition = ce.children.Max(c => c.codePrefix.Youngest())+1;
+                int max = ce.children.Max(c => c.codePrefix.Youngest());
+                int addition=0;
+                if (max+1 == ce.children.Count)
+                    addition = max + 1;
+                else
+                {
+                    List<CatalogEntry> children = ce.children;
+                    if (children[0].codePrefix.Youngest() != 0)
+                        addition = 0;
+                    else
+                    {
+                        CatalogCode prev = children[0].codePrefix;
+                        int pos = 1;
+                        while (pos < children.Count)
+                        {
+                            CatalogCode comp = children[pos].codePrefix;
+                            if (comp.Youngest() - prev.Youngest() != 1)
+                            {
+                                addition = prev.Youngest() + 1;
+                                break;
+                            }
+                            prev = comp;
+                            pos++;
+                        }
+                    }
+                }
                 if(code.Equals(CatalogCode.current))
                     return new CatalogCode(addition.ToString());
                 return new CatalogCode(code.ToString()+$".{addition}");

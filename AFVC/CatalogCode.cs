@@ -32,6 +32,8 @@ namespace AFVC
                     CodePattern = new int[0];
                 else
                 {
+                    if(codeOriginal.Contains("-"))
+                        throw new CatalogError();
                     CodePattern = codeOriginal.Split('.').Select(Int32.Parse).ToArray();
                 }
             }

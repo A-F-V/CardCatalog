@@ -8,6 +8,10 @@ namespace AFVC
 {
     class CatalogError : Exception
     {
+        public CatalogError() : base()
+        {
+            
+        }
         public CatalogError(String message) : base(message)
         {
             
