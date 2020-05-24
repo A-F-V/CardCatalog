@@ -324,8 +324,8 @@ namespace AFVC
         {
             Console.WriteLine("Please insert where to backup to: ");
             string path = MorePaths.getFolderPath();
-            if (path == null || path == folder)
-                Console.WriteLine("Failed to back up");
+            if (path == null || path == folder || path.Contains(folder))
+                Console.WriteLine($"Failed to back up to {path}");
             else
                 BackUp(path);
         }
