@@ -253,14 +253,12 @@ namespace AFVC
 
         private void PromptMove()
         {
-            Console.WriteLine("Please insert the original code");
-            CatalogCode from = new CatalogCode(ReadAnswer());
-            Console.WriteLine("Please insert the new code");
-            CatalogCode to = new CatalogCode(ReadAnswer());
+            CatalogCode from = PromptCodeOrNewChild("Please insert the original code");
+            CatalogCode to = PromptCodeOrNewChild("Please insert the new code");
             if (!IsMoveConflict(from, to))
                 MoveAndSave(from, to);
             else
-                Console.WriteLine("Unable to rename");
+                Console.WriteLine($"Unable to rename {from} to {to}");
         }
 
         private void Move(CatalogCode a, CatalogCode b)
@@ -319,7 +317,7 @@ namespace AFVC
 
         private bool IsMoveConflict(CatalogCode a, CatalogCode b)
         {
-            return catalog.Contains(b);
+            return !catalog.Contains(a) || catalog.Contains(b);
         }
 
         private void PromptBackUp()
@@ -543,20 +541,21 @@ namespace AFVC
         private void AddUpdateRecord(CatalogCode from = null)
         {
             CatalogCode code = from ?? CatalogCode.current + PromptCodeOrNewChild("Insert the new code to add");
-            string title = PromptNewOrOldTitle(code);
+            string title = PromptNewOrOldTitleToEdit(code);
             if (!catalog.Contains(code)) CreateFolderFor(code);
             catalog.Update(code, title);
             Save(folder + fileLoc);
         }
 
-        private string PromptNewOrOldTitle(CatalogCode code)
+        private string PromptNewOrOldTitleToEdit(CatalogCode code)
         {
             YNAnswer response = YNAnswer.No;
             string title = "";
             if (catalog.Contains(code))
             {
                 title = catalog.Get(code).name;
-                response = AskYNQuestion($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
+                if(title!="")
+                    response = AskYNQuestion($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
             }
 
             if (response == YNAnswer.No)
@@ -600,7 +599,7 @@ namespace AFVC
                 {
                     Process p = PromptOpening(pic);
                     CatalogCode code = PromptCodeOrNewChild("Set the code for this file");
-                    string title = PromptNewOrOldTitle(code);
+                    string title = PromptNewOrOldTitleToEdit(code);
 
                     CreateFolderFor(code);
                     SetFileCode(pic, code);
