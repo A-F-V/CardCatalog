@@ -7,9 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Controls;
 using ImageProcessor;
 using ImageProcessor.Imaging;
 using Pastel;
+using Image = System.Drawing.Image;
 
 namespace AFVC
 {
@@ -39,7 +41,7 @@ namespace AFVC
             "Update Catalog From Input", "View Catalog", "Add/Update", "Shift", "Delete Folder", "Delete Card",
             "View Card(s)",
             "View Document",
-            "Backup", "Move", "Search", "Open Folder", "Clear Console", "Close"
+            "Backup", "Move", "Search", "Open Folder", "Clear Console","Clean Folders", "Close"
         };
 
         private static readonly int offdist = 3;
@@ -133,19 +135,43 @@ namespace AFVC
                         case 12:
                             Console.Clear();
                             break;
+                        case 13:
+                            CleanFolders(folder+storage);
+                            break;
                     }
                 }
-                catch (CatalogError e)
+                catch (Exception e)
                 {
                     Console.WriteLine("There was a serious error: " + e.Message.Pastel(Color.Red) + ". Reprompting...");
                     Thread.Sleep(500);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine("There was a serious " + "error".Pastel(Color.Red) + ". Reprompting...");
-                    Thread.Sleep(500);
-                }
             } while (dec != OPTIONS - 1);
+        }
+
+        private void CleanFolders(string path) //CLEANS CHILDREN NOT SELF
+        {
+            string[] subDirectories = Directory.GetDirectories(path);
+            foreach (string dir in subDirectories)
+            {
+                CleanFolders(dir);
+                string name = Path.GetFileName(dir);
+                if (name.Contains(' '))
+                {
+                    string newName = name.Split(' ')[0];
+                    Directory.Move(dir, path + "\\" + newName);
+                }
+            }
+
+            string[] files = Directory.GetFiles(path);
+            foreach (string file in files)
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                if (name.Contains(' '))
+                {
+                    string newName = name.Split(' ')[0];
+                    Directory.Move(file, path + "\\" + newName+Path.GetExtension(file));
+                }
+            }
         }
 
         private void PromptShift()

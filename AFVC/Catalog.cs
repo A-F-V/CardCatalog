@@ -101,7 +101,6 @@ namespace AFVC
             return false;
         }
 
-
         public void Set(CatalogCode code, string title)
         {
             Get(code).name = title;
