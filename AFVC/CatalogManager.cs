@@ -23,7 +23,7 @@ namespace AFVC
         public static readonly string tempFolder = "\\temp";
         public static readonly string tempFile = "\\temp.tiff";
         public static readonly string[] imageFormats = {".jpg", ".png", ".tif", ".bmp", ".gif", ".jpeg"};
-
+        static PastelConsole PC = new PastelConsole(ColourPalette.MarineFields);
         public static string[] tasks =
         {
             "Update Catalog From Input", "View Catalog", "Add/Update", "Shift", "Delete Folder", "Delete Card",
@@ -64,15 +64,15 @@ namespace AFVC
                 while (true)
                 {
                     for (int i = 0; i < tasks.Length; i++)
-                        Console.WriteLine(
-                            $"{i} - {tasks[i].Pastel(i % 2 == 0 ? Color.DeepSkyBlue : Color.DarkOrange)}");
+                        PC.FormatWriteLine(
+                            $"{{{(i % 2 == 0 ? 1 : -2)}}} - {{{(i%2==0?1:-2)}}}",i,tasks[i]);
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
 
                 if (dec == 0 || dec == 4 || dec == 5 || dec == 8 || dec == 9)
                 {
-                    Console.WriteLine($"Do you want:\n1 - Back\n2 - {tasks[dec].Pastel(Color.GreenYellow)}");
+                    PC.FormatWriteLine("Do you want:\n1 - Back\n2 - {2}",tasks[dec]);
                     int decC;
                     int.TryParse(ReadAnswer(), out decC);
                     if (decC != 2)
@@ -130,7 +130,7 @@ namespace AFVC
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("There was a serious error: " + e.Message.Pastel(Color.Red) + ". Reprompting...");
+                    PC.FormatWriteLine("There was a serious error: {-3} Reprompting...", e.Message);
                     Thread.Sleep(500);
                 }
             } while (dec != OPTIONS - 1);
@@ -164,11 +164,11 @@ namespace AFVC
 
         private void PromptShift()
         {
-            Console.WriteLine("Please insert the range to shift along");
+            PC.WriteLine("Please insert the range to shift along:");
             CodeRange orig = new CodeRange(ReadAnswer());
             if (orig.fromCode.Equals(CatalogCode.current))
                 throw new CatalogError("Cannot shift the root");
-            Console.WriteLine("Please insert by how much");
+            PC.WriteLine("Please insert by how much?");
             int dist = int.Parse(ReadAnswer());
             if (dist == 0)
                 return;
@@ -181,7 +181,7 @@ namespace AFVC
 
         private void PromptOpenFolder()
         {
-            Console.WriteLine("Insert the code of the folder to open:");
+            PC.WriteLine("Insert the code of the folder to open:");
             CatalogCode code = new CatalogCode(ReadAnswer());
             if (!catalog.Contains(code))
                 throw new CatalogError($"{code} does not exist");
@@ -190,7 +190,7 @@ namespace AFVC
 
         private void PromptViewDocument()
         {
-            Console.WriteLine("Insert the code of the file to view:");
+            PC.WriteLine("Insert the code of the file to view:");
             CatalogCode code = new CatalogCode(ReadAnswer());
             if (code.Equals(CatalogCode.current))
                 throw new CatalogError("Cannot open root");
@@ -201,21 +201,22 @@ namespace AFVC
 
         private void PromptSearch()
         {
-            Console.WriteLine("Insert the phrase to search:");
+            PC.WriteLine("Insert the phrase to search:");
             List<CatalogEntry> entries = catalog.Search(ReadAnswer());
-            for (int x = 0; x < entries.Count; x++) Console.WriteLine($"{x}) {FancyEntryWithFileFlag(entries[x])}");
+            for (int x = 0; x < entries.Count; x++)
+            {
+                PC.FormatWrite("{-2}) ",x);
+                Console.WriteLine(FancyEntryWithFileFlag(entries[x]));
+            }
 
             if (entries.Count != 0)
             {
-                Console.WriteLine("Would you like to " + "0) open ".Pastel(Color.Aqua) +
-                                  "1) edit ".Pastel(Color.OrangeRed) + "2) view catalog from ".Pastel(Color.Aqua) +
-                                  "3) back ".Pastel(Color.OrangeRed) +
-                                  "one of the entries?");
+                PC.FormatWriteLine("Would you like to {3} {-3} {3} {-3} one of the entries ? ", "0) open","1) edit ", "2) view catalog from ","3) back ");
                 int dec = int.Parse(ReadAnswer());
                 CatalogEntry e = null;
                 if (dec <= 2 && dec >= 0)
                 {
-                    Console.WriteLine("Insert the number to view");
+                    PC.WriteLine("Insert the number to view");
                     int num = int.Parse(ReadAnswer());
                     if (num < 0 || num >= entries.Count) throw new CatalogError($"Cannot aceess number {num}");
                     e = entries[num];
@@ -233,7 +234,7 @@ namespace AFVC
                         AddUpdateRecord(e.codePrefix);
                         break;
                     case 2:
-                        Console.WriteLine("And to what depth (-1 for all)?");
+                        PC.WriteLine("And to what depth (-1 for all)?");
                         if (!int.TryParse(ReadAnswer(), out int depth)) depth = -1;
                         Console.WriteLine(TreePrint(e, depth));
                         break;
@@ -248,7 +249,7 @@ namespace AFVC
             if (!IsMoveConflict(from, to))
                 MoveAndSave(from, to);
             else
-                Console.WriteLine($"Unable to rename {from} to {to}");
+                PC.FormatWriteLine("Unable to rename {-3} to {-3}",from,to);
         }
 
         private void Move(CatalogCode a, CatalogCode b)
@@ -313,10 +314,10 @@ namespace AFVC
 
         private void PromptBackUp()
         {
-            Console.WriteLine("Please insert where to backup to: ");
+            PC.WriteLine("Please insert where to backup to: ");
             string path = MorePaths.getFolderPath();
             if (path == null || path == folder || path.Contains(folder))
-                Console.WriteLine($"Failed to back up to {path}");
+                PC.FormatWriteLine("Failed to back up to {0}",path);
             else
                 BackUp(path);
         }
@@ -351,7 +352,7 @@ namespace AFVC
 
         private void PromptDeleteFile()
         {
-            Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
+            PC.FormatWriteLine("Insert the code to {-3}", "delete");
             CatalogCode code = new CatalogCode(ReadAnswer());
             if (IsFile(code))
             {
@@ -371,8 +372,8 @@ namespace AFVC
         {
             bool isFile = IsFile(entry.codePrefix, out string path, out bool isImage);
             //Color bg = isFile ? (isImage ? Color.DodgerBlue : Color.OrangeRed) : Color.FromArgb(12, 12, 12);
-            return entry.FancifyEntry(isFile,Color.FromArgb(215,78,54), Color.FromArgb(12, 12, 12)) + " " +
-                   (isFile ? "\u2588".Pastel(isImage ? Color.DodgerBlue : Color.OrangeRed) : "");
+            return entry.FancifyEntry(isFile,-3) + " " +
+                   (isFile ? PC.Format($"{{{(isImage ? 0 : -2)}}}","\u2588" ): "");
         }
 
         private string TreePrint(CatalogEntry entry, int depth = -1, int offset = 0)
@@ -392,14 +393,14 @@ namespace AFVC
             if (File.Exists(folder + tempFile))
                 File.Delete(folder + tempFolder + tempFile);
 
-            Console.WriteLine("Insert the codes to " + "view".Pastel(Color.DeepSkyBlue));
-            Console.WriteLine(
+            PC.FormatWriteLine("Insert the codes to {0}","view");
+            PC.WriteLine(
                 "To create a range, use \"-\" between codes, use a \".\" at the end of codes to force not going down, and seperate groupings with a \",\"");
             List<CodeRange> codeRanges = CodeRange.Parse(ReadAnswer());
             List<CatalogCode> cards = CardsInRange(codeRanges);
             if (cards.Count != 0)
             {
-                foreach (CatalogCode catalogCode in cards) Console.WriteLine(catalog.Get(catalogCode).FileName.Pastel(Color.Aqua));
+                foreach (CatalogCode catalogCode in cards) PC.FormatWriteLine("{0}",catalog.Get(catalogCode).FileName);
 
                 Console.WriteLine();
                 GenerateCardView(cards);
@@ -407,7 +408,7 @@ namespace AFVC
             }
             else
             {
-                Console.WriteLine("No card exists.");
+                PC.WriteLine("No card exists.");
             }
         }
 
@@ -468,11 +469,11 @@ namespace AFVC
 
         private void PrintCatalog()
         {
-            Console.WriteLine("Insert the code you want to display (. for all):");
+            PC.WriteLine("Insert the code you want to display (. for all):");
             string response = ReadAnswer();
             CatalogCode code = new CatalogCode(response);
 
-            Console.WriteLine("And to what depth (-1 for all)?");
+            PC.WriteLine("And to what depth (-1 for all)?");
             if (!int.TryParse(ReadAnswer(), out int depth)) depth = -1;
             if (code.Equals(CatalogCode.current) && depth >= 1)
                 depth++;
@@ -513,7 +514,7 @@ namespace AFVC
 
         private void PromptDeleteFolder()
         {
-            Console.WriteLine("Insert the code to " + "delete".Pastel(Color.Red));
+            PC.FormatWriteLine("Insert the code to {-3}", "delete");
             CatalogCode code = new CatalogCode(ReadAnswer());
             YNAnswer response =
                 AskYNQuestion($"Are you sure you want to delete the folder {catalog.Get(code).FancifyEntry()}?");
@@ -547,21 +548,21 @@ namespace AFVC
             {
                 title = catalog.Get(code).name;
                 if(title!="")
-                    response = AskYNQuestion($"Would you like to keep the title {title.Pastel(Color.Aquamarine)}? (Y/N)");
+                    response = AskYNQuestion($"Would you like to keep the title {PC.Format("{0}",title)}? (Y/N)");
             }
 
             if (response == YNAnswer.No)
             {
-                Console.WriteLine($"Insert the title of {code.ToString().Pastel(Color.OrangeRed)}");
+                PC.FormatWriteLine($"Insert the title of {0}",code);
                 title = ReadAnswer();
             }
 
             return title;
         }
 
-        private YNAnswer AskYNQuestion(string s)
+        private YNAnswer AskYNQuestion(string formattedString)
         {
-            Console.WriteLine(s);
+            Console.WriteLine(formattedString);
             string response = ReadAnswer();
             if (response.ToLower() == "y" || response.ToLower() == "yes")
                 return YNAnswer.Yes;
@@ -602,13 +603,13 @@ namespace AFVC
             }
             else
             {
-                Console.WriteLine("No files to upload\n");
+                PC.WriteLine("No files to upload\n");
             }
         }
 
         private CatalogCode PromptCodeOrNewChild(string promptMessage)
         {
-            Console.WriteLine(promptMessage);
+            PC.WriteLine(promptMessage);
             string input = ReadAnswer();
             if (input == "")
                 throw new CatalogError("Cannot alter the Root");
@@ -637,7 +638,7 @@ namespace AFVC
         {
             Process p = null;
             YNAnswer response =
-                AskYNQuestion($"Would you like to see {Path.GetFileName(pic).Pastel(Color.Aquamarine)}? (Y/N)");
+                AskYNQuestion($"Would you like to see {PC.Format("{0}",Path.GetFileName(pic))}? (Y/N)");
             if (response == YNAnswer.Yes)
                 p = OpenFileProcess(pic);
             return p;
@@ -671,7 +672,7 @@ namespace AFVC
         private string ReadAnswer()
         {
             Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
             string output = Console.ReadLine();
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine();

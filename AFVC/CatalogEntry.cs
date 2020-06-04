@@ -76,10 +76,10 @@ namespace AFVC
             return output;
         }
 
-        public string FancifyEntry(bool over = false, Color c=default(Color),Color b=default(Color))
+        public string FancifyEntry(bool over = false, int number=0)
         {
-            return $"{codePrefix.ToString().Pastel(Color.Wheat)}"+
-                   $" {(name == null ? string.Empty : name.Pastel(over?c:ColourPalette.Colors[Math.Min(codePrefix.Depth, ColourPalette.Colors.Length)]))}".PastelBg(b);
+            PastelConsole PC = new PastelConsole(ColourPalette.MarineFields);
+            return PC.Format($"{{-2}} {{{(over?number:Math.Max(codePrefix.Depth - 1,0))}}}", codePrefix,name ?? String.Empty);
         }
     }
 }

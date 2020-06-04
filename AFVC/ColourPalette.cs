@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -20,22 +21,38 @@ namespace AFVC
             Color.FromArgb(8, 76, 97)
         };
 
-        private Color background, body, second;
+        public Color Background, Body, Second;
         private Color[] colourRange;
         public static ColourPalette MarineFields = new ColourPalette(MFR,Color.FromArgb(3, 30, 38),Color.Wheat,Color.FromArgb(208,60,27));
 
         public ColourPalette(Color[] colourRange,Color background, Color body, Color second)
         {
-            this.background = background;
-            this.body = body;
-            this.second = second;
+            this.Background = background;
+            this.Body = body;
+            this.Second = second;
             this.colourRange = colourRange;
         }
 
-        public Color this[int index] => colourRange[index<=0?0:(index>=colourRange.Length?colourRange.Length-1:index)];
-        public Color this[ColourPurpose purp] => purp == ColourPurpose.Background
-            ? background
-            : (purp == ColourPurpose.Body ? body : second);
+        public Color this[int index]
+        {
+            get
+            {
+                switch (index)
+                {
+                    case -1:
+                        return Background;
+                    case -2:
+                        return Body;
+                    case -3:
+                        return Second;
+                    default:
+                        if (index <= 0)
+                            return colourRange[0];
+                        if (index > colourRange.Length - 1)
+                            return colourRange[colourRange.Length - 1];
+                        return colourRange[index];
+                }
+            }
+        }
     }
-    enum ColourPurpose { Background,Body,Second}
 }
