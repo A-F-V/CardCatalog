@@ -593,10 +593,10 @@ namespace AFVC
             string[] pictures = Directory.GetFiles(folder + inputFolder);
             if (pictures.Length != 0)
             {
-                Console.Clear();
-                Console.WriteLine(TreePrint(catalog.root));
                 foreach (string pic in Directory.GetFiles(folder + inputFolder))
                 {
+                    Console.Clear();
+                    Console.WriteLine(TreePrint(catalog.root));
                     Process p = PromptOpening(pic);
                     CatalogCode code = PromptCodeOrNewChild("Set the code for this file");
                     string title = PromptNewOrOldTitleToEdit(code);
@@ -605,9 +605,8 @@ namespace AFVC
                     SetFileCode(pic, code);
                     catalog.Update(code, title);
                     p?.Kill();
+                    Save(folder + fileLoc);
                 }
-
-                Save(folder + fileLoc);
             }
             else
             {
