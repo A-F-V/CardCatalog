@@ -24,18 +24,6 @@ namespace AFVC
         public static readonly string tempFile = "\\temp.tiff";
         public static readonly string[] imageFormats = {".jpg", ".png", ".tif", ".bmp", ".gif", ".jpeg"};
 
-        public static Color[] Colors =
-        {
-            Color.Crimson,
-            Color.FromArgb(213, 254, 119),
-            Color.FromArgb(57, 240, 119),
-            Color.FromArgb(0, 201, 167),
-            Color.MediumPurple,
-            Color.DarkMagenta,
-            Color.Fuchsia,
-            Color.Gold
-        };
-
         public static string[] tasks =
         {
             "Update Catalog From Input", "View Catalog", "Add/Update", "Shift", "Delete Folder", "Delete Card",
@@ -155,9 +143,9 @@ namespace AFVC
             {
                 CleanFolders(dir);
                 string name = Path.GetFileName(dir);
-                if (name.Contains(' '))
+                if (name.Contains(" ("))
                 {
-                    string newName = name.Split(' ')[0];
+                    string newName = name.Split('(')[0].RemoveLast(1);
                     Directory.Move(dir, path + "\\" + newName);
                 }
             }
@@ -166,9 +154,9 @@ namespace AFVC
             foreach (string file in files)
             {
                 string name = Path.GetFileNameWithoutExtension(file);
-                if (name.Contains(' '))
+                if (name.Contains(" ("))
                 {
-                    string newName = name.Split(' ')[0];
+                    string newName = name.Split('(')[0].RemoveLast(1);
                     Directory.Move(file, path + "\\" + newName+Path.GetExtension(file));
                 }
             }
@@ -182,6 +170,8 @@ namespace AFVC
                 throw new CatalogError("Cannot shift the root");
             Console.WriteLine("Please insert by how much");
             int dist = int.Parse(ReadAnswer());
+            if (dist == 0)
+                return;
             CodeRange shifted = orig + dist;
             if (catalog.Contains(shifted - orig, orig,
                 (shifted - orig).fromCode.Youngest() - shifted.fromCode.Youngest()))
@@ -271,7 +261,8 @@ namespace AFVC
                 Move(child.codePrefix, b + CatalogCode.Relative(a, child.codePrefix));
             if (!Directory.Exists(folder + storage + FolderFor(b)))
                 Directory.CreateDirectory(folder + storage + FolderFor(b));
-            if (IsFile(a, out string oldPath, out bool x)) SetFileCode(oldPath, b);
+            if (IsFile(a, out string oldPath, out bool x))
+                SetFileCode(oldPath, b,title);
             catalog.Update(b, title);
         }
 
@@ -379,7 +370,8 @@ namespace AFVC
         private string FancyEntryWithFileFlag(CatalogEntry entry)
         {
             bool isFile = IsFile(entry.codePrefix, out string path, out bool isImage);
-            return entry.FancifyEntry() + " " +
+            //Color bg = isFile ? (isImage ? Color.DodgerBlue : Color.OrangeRed) : Color.FromArgb(12, 12, 12);
+            return entry.FancifyEntry(isFile,Color.FromArgb(215,78,54), Color.FromArgb(12, 12, 12)) + " " +
                    (isFile ? "\u2588".Pastel(isImage ? Color.DodgerBlue : Color.OrangeRed) : "");
         }
 
@@ -407,7 +399,7 @@ namespace AFVC
             List<CatalogCode> cards = CardsInRange(codeRanges);
             if (cards.Count != 0)
             {
-                foreach (CatalogCode catalogCode in cards) Console.WriteLine(catalogCode.ToString().Pastel(Color.Aqua));
+                foreach (CatalogCode catalogCode in cards) Console.WriteLine(catalog.Get(catalogCode).FileName.Pastel(Color.Aqua));
 
                 Console.WriteLine();
                 GenerateCardView(cards);
@@ -516,7 +508,7 @@ namespace AFVC
         {
             string testFolder = folder + storage + FolderFor(code);
             return Directory.EnumerateFiles(testFolder)
-                .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == code.ToString());
+                .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p).Contains(code.ToString()));
         }
 
         private void PromptDeleteFolder()
@@ -602,7 +594,7 @@ namespace AFVC
                     string title = PromptNewOrOldTitleToEdit(code);
 
                     CreateFolderFor(code);
-                    SetFileCode(pic, code);
+                    SetFileCode(pic, code,title);
                     catalog.Update(code, title);
                     p?.Kill();
                     Save(folder + fileLoc);
@@ -630,11 +622,12 @@ namespace AFVC
             return new CatalogCode(input);
         }
 
-        private void SetFileCode(string originalFile, CatalogCode code)
+        private void SetFileCode(string originalFile, CatalogCode code, string title)
         {
-            string path = folder + storage + FolderFor(code) + "\\" + code + Path.GetExtension(originalFile);
+            string name = $"{code.ToString()} {title}";
+            string path = folder + storage + FolderFor(code) + "\\" + name + Path.GetExtension(originalFile);
             string temppath = Directory.EnumerateFiles(Path.GetDirectoryName(path))
-                .FirstOrDefault(o => Path.GetFileNameWithoutExtension(o) == code.ToString());
+                .FirstOrDefault(o => Path.GetFileNameWithoutExtension(o) == name);
             if (temppath != null)
                 File.Delete(temppath);
             File.Move(originalFile, path);

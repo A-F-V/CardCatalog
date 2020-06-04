@@ -17,6 +17,8 @@ namespace AFVC
                 Console.WriteLine("Files should be named correctly in input folder");
                 Console.WriteLine(
                     "Few warnings are given in program. Ensure all codes are correct (01 is incorrect, 1 is correct)");
+                Console.WriteLine("Do not have brackets in file names");
+                Console.WriteLine("Ensure you have LONG PATHS enabled : https://www.howtogeek.com/266621/how-to-make-windows-10-accept-file-paths-over-260-characters");
                 string s;
                 int dec;
                 do
