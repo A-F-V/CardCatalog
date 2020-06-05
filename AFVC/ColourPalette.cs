@@ -23,7 +23,7 @@ namespace AFVC
 
         public Color Background, Body, Second;
         private Color[] colourRange;
-        public static ColourPalette MarineFields = new ColourPalette(MFR,Color.FromArgb(3, 30, 38),Color.Wheat,Color.FromArgb(208,60,27));
+        public static ColourPalette MarineFields = new ColourPalette(MFR,Color.FromArgb(3, 30, 38),Color.Wheat,Color.FromArgb(223,121,131));//Color.FromArgb(208,60,27)
 
         public ColourPalette(Color[] colourRange,Color background, Color body, Color second)
         {
@@ -32,7 +32,7 @@ namespace AFVC
             this.Second = second;
             this.colourRange = colourRange;
         }
-
+        
         public Color this[int index]
         {
             get

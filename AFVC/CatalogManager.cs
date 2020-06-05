@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -84,14 +85,14 @@ namespace AFVC
                     switch (dec)
                     {
                         case 0:
-                            UpdateCatalogFromInput();
+                            PromptUpdateCatalogFromInput();
                             break;
                         case 1:
                             Console.WriteLine();
                             PrintCatalog();
                             break;
                         case 2:
-                            AddUpdateRecord();
+                            PromptAddUpdateRecord();
                             break;
                         case 3:
                             PromptShift();
@@ -103,7 +104,7 @@ namespace AFVC
                             PromptDeleteFile();
                             break;
                         case 6:
-                            ViewCards();
+                            PromptViewCards();
                             break;
                         case 7:
                             PromptViewDocument();
@@ -211,7 +212,7 @@ namespace AFVC
 
             if (entries.Count != 0)
             {
-                PC.FormatWriteLine("Would you like to {3} {-3} {3} {-3} one of the entries ? ", "0) open","1) edit ", "2) view catalog from ","3) back ");
+                PC.FormatWriteLine("Would you like to {3} {-3} {3} {-3} one of the entries? ", "0) open","1) edit ", "2) view catalog from ","3) back ");
                 int dec = int.Parse(ReadAnswer());
                 CatalogEntry e = null;
                 if (dec <= 2 && dec >= 0)
@@ -231,7 +232,7 @@ namespace AFVC
                             OpenFileProcess(folder + storage + FolderFor(e.codePrefix));
                         break;
                     case 1:
-                        AddUpdateRecord(e.codePrefix);
+                        PromptAddUpdateRecord(e.codePrefix);
                         break;
                     case 2:
                         PC.WriteLine("And to what depth (-1 for all)?");
@@ -372,8 +373,8 @@ namespace AFVC
         {
             bool isFile = IsFile(entry.codePrefix, out string path, out bool isImage);
             //Color bg = isFile ? (isImage ? Color.DodgerBlue : Color.OrangeRed) : Color.FromArgb(12, 12, 12);
-            return entry.FancifyEntry(isFile,-3) + " " +
-                   (isFile ? PC.Format($"{{{(isImage ? 0 : -2)}}}","\u2588" ): "");
+            return entry.FancifyEntry(isFile,-3) +
+                   (isFile ? PC.Format($"{{{(isImage ? 0 : -2)}}}", " <\u25A0>") : "");
         }
 
         private string TreePrint(CatalogEntry entry, int depth = -1, int offset = 0)
@@ -388,7 +389,7 @@ namespace AFVC
             return thisString;
         }
 
-        private void ViewCards()
+        private void PromptViewCards()
         {
             if (File.Exists(folder + tempFile))
                 File.Delete(folder + tempFolder + tempFile);
@@ -531,7 +532,7 @@ namespace AFVC
             Directory.Delete(folder + storage + FolderFor(code), true);
         }
 
-        private void AddUpdateRecord(CatalogCode from = null)
+        private void PromptAddUpdateRecord(CatalogCode from = null)
         {
             CatalogCode code = from ?? CatalogCode.current + PromptCodeOrNewChild("Insert the new code to add");
             string title = PromptNewOrOldTitleToEdit(code);
@@ -553,7 +554,7 @@ namespace AFVC
 
             if (response == YNAnswer.No)
             {
-                PC.FormatWriteLine($"Insert the title of {0}",code);
+                PC.FormatWriteLine("Insert the title of {0}",code);
                 title = ReadAnswer();
             }
 
@@ -581,7 +582,7 @@ namespace AFVC
             return "\\" + string.Join("\\", code.CodePattern);
         }
 
-        private void UpdateCatalogFromInput()
+        private void PromptUpdateCatalogFromInput()
         {
             string[] pictures = Directory.GetFiles(folder + inputFolder);
             if (pictures.Length != 0)
@@ -646,8 +647,8 @@ namespace AFVC
 
         private static Process OpenFileProcess(string pic)
         {
-            Process p = Process.Start(pic);
             Process thisP = Process.GetCurrentProcess();
+            Process p = Process.Start(pic);
             IntPtr s = thisP.MainWindowHandle;
             SetForegroundWindow(s);
             return p;
