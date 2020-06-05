@@ -4,6 +4,7 @@ namespace AFVC
 {
     internal class Program
     {
+        static PastelConsole PC = new PastelConsole(ColourPalette.MarineFields);
         private static void Main(string[] args)
         {
             CatalogManager m;
@@ -14,14 +15,16 @@ namespace AFVC
             }
             else
             {
-                Console.WriteLine("Files should be named correctly in input folder");
-                Console.WriteLine(
+                PC.WriteLine("Files should be named correctly in input folder");
+                PC.WriteLine(
                     "Few warnings are given in program. Ensure all codes are correct (01 is incorrect, 1 is correct)");
+                PC.WriteLine("Do not have brackets in file names");
+                PC.WriteLine("Ensure you have LONG PATHS enabled : https://www.howtogeek.com/266621/how-to-make-windows-10-accept-file-paths-over-260-characters");
                 string s;
                 int dec;
                 do
                 {
-                    Console.WriteLine("0 - New Card System\n1 - Load Card System\n2 - Close");
+                    PC.WriteLine("0 - New Card System\n1 - Load Card System\n2 - Close");
                     s = Console.ReadLine();
                 } while (!int.TryParse(s, out dec));
 

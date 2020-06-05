@@ -10,6 +10,7 @@ namespace AFVC
         public List<CatalogEntry> children = new List<CatalogEntry>();
         public CatalogCode codePrefix { get; }
         public string name { get; set; }
+        public string FileName => $"{codePrefix.ToString()} {name.ToString()}";
 
         public CatalogEntry()
         {
@@ -75,10 +76,10 @@ namespace AFVC
             return output;
         }
 
-        public string FancifyEntry()
+        public string FancifyEntry(bool over = false, int number=0)
         {
-            return $"{codePrefix.ToString().Pastel(Color.OrangeRed)}" +
-                   $" {(name == null ? string.Empty : name.Pastel(CatalogManager.Colors[Math.Min(codePrefix.Depth - 1, CatalogManager.Colors.Length - 1)]))}";
+            PastelConsole PC = new PastelConsole(ColourPalette.MarineFields);
+            return PC.Format($"{{-2}} {{{(over?number:Math.Max(codePrefix.Depth - 1,0))}}}", codePrefix,name ?? String.Empty);
         }
     }
 }

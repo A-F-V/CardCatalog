@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Drawing;
+using System.Linq;
+using Pastel;
 
 namespace AFVC
 {
@@ -22,6 +24,11 @@ namespace AFVC
         public static string RemoveNonNumeric(this string s)
         {
             return string.Concat(s.Where(c => numeric.Contains(c)));
+        }
+
+        public static string Tone(this string s, Color c)
+        {
+            return s.Pastel(c);
         }
     }
 }
