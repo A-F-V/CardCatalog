@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Controls;
@@ -66,7 +67,7 @@ namespace AFVC
                 {
                     for (int i = 0; i < tasks.Length; i++)
                         PC.FormatWriteLine(
-                            $"{{{(i % 2 == 0 ? 1 : -2)}}} - {{{(i%2==0?1:-2)}}}",i,tasks[i]);
+                            $"{{{(i % 2 == 0 ? 2 : -2)}}} - {{{(i%2==0?2:-2)}}}",i,tasks[i]);
                     if (int.TryParse(ReadAnswer(), out dec) && dec >= 0 && dec < OPTIONS)
                         break;
                 }
@@ -377,15 +378,19 @@ namespace AFVC
                    (isFile ? PC.Format($"{{{(isImage ? 0 : -2)}}}", " <\u25A0>") : "");
         }
 
-        private string TreePrint(CatalogEntry entry, int depth = -1, int offset = 0)
+        private string TreePrint(CatalogEntry entry, int depth = -1, int spacing = 3, string head = "",string body = "") //TODO LIKE CONSOLE TREE
         {
             if (depth == 0)
                 return "";
-            string thisString = "|-" + FancyEntryWithFileFlag(entry) + "\n";
+            string thisString = head + FancyEntryWithFileFlag(entry) + "\n";
             if (depth > 1 || depth == -1)
-                foreach (CatalogEntry child in entry.children)
-                    thisString += new string(' ', offset + offdist) +
-                                  TreePrint(child, depth == -1 ? -1 : depth - 1, offset + offdist);
+                for (int i = 0; i < entry.children.Count; i++)
+                {
+                    CatalogEntry child = entry.children[i];
+                    string childheader =  (i == entry.children.Count - 1 ? "\u2514" : "\u251C")+new String('\u2500',spacing);
+                    string childbody = (i == entry.children.Count - 1? " " :"\u2502") + new String(' ',spacing);
+                    thisString += TreePrint(child, depth == -1 ? -1 : depth - 1, spacing, body+childheader,body+childbody);
+                }
             return thisString;
         }
 
