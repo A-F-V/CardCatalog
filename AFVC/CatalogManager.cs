@@ -21,6 +21,7 @@ namespace AFVC
     {
         public static readonly string fileLoc = "\\catalog.afv";
         public static readonly string inputFolder = "\\input";
+        public static readonly string outputFolder = "\\output";
         public static readonly string storage = "\\cards";
         public static readonly string tempFolder = "\\temp";
         public static readonly string tempFile = "\\temp.tiff";
@@ -29,9 +30,9 @@ namespace AFVC
         public static string[] tasks =
         {
             "Update Catalog From Input", "View Catalog", "Add/Update", "Shift", "Delete Folder", "Delete Card",
-            "View Card(s)",
-            "View Document",
-            "Backup", "Move", "Search", "Open Folder", "Clear Console","Clean Folders", "Close"
+            "View Card(s)", "View Document", "Backup", "Move", "Search", "Open Folder", "Clear Console","Clean Folders",
+            "Generate Table of Contents",
+            "Close"
         };
 
         private static readonly int offdist = 3;
@@ -128,6 +129,9 @@ namespace AFVC
                         case 13:
                             CleanFolders(folder+storage);
                             break;
+                        case 14:
+                            GenerateTableOfContents();
+                            break;
                     }
                 }
                 catch (Exception e)
@@ -136,6 +140,11 @@ namespace AFVC
                     Thread.Sleep(500);
                 }
             } while (dec != OPTIONS - 1);
+        }
+
+        private void GenerateTableOfContents()
+        {
+            Save(folder+outputFolder+"\\ToC.txt",NonTreePrint(catalog.root));
         }
 
         private void CleanFolders(string path) //CLEANS CHILDREN NOT SELF
@@ -390,6 +399,22 @@ namespace AFVC
                     string childheader =  (i == entry.children.Count - 1 ? "\u2514" : "\u251C")+new String('\u2500',spacing);
                     string childbody = (i == entry.children.Count - 1? " " :"\u2502") + new String(' ',spacing);
                     thisString += TreePrint(child, depth == -1 ? -1 : depth - 1, spacing, body+childheader,body+childbody);
+                }
+            return thisString;
+        }
+
+        private string NonTreePrint(CatalogEntry entry, int depth = -1)
+        {
+            if(depth == 0)
+                return "";
+            bool isFile = IsFile(entry.codePrefix, out string path, out bool isImage);
+            string thisString = new String('\t', entry.codePrefix.Depth) +entry.FileName+
+                                (isFile ?  " <\u25A0>":"")+"\n";
+            if (depth > 1 || depth == -1)
+                for (int i = 0; i < entry.children.Count; i++)
+                {
+                    CatalogEntry child = entry.children[i];
+                    thisString += NonTreePrint(child, depth == -1 ? -1 : depth - 1);
                 }
             return thisString;
         }
@@ -662,6 +687,7 @@ namespace AFVC
         public static CatalogManager Setup(string path)
         {
             Directory.CreateDirectory(path + inputFolder);
+            Directory.CreateDirectory(path + outputFolder);
             Directory.CreateDirectory(path + storage);
             Directory.CreateDirectory(path + tempFolder);
             File.Create(path + fileLoc).Close();
@@ -674,6 +700,12 @@ namespace AFVC
             File.Create(path).Close();
             File.AppendAllLines(path, catalog.Serialize());
         }
+        private void Save(string path,string contents)
+        {
+            File.Delete(path);
+            File.Create(path).Close();
+            File.AppendAllText(path, contents);
+        }
 
         private string ReadAnswer()
         {
@@ -683,90 +715,6 @@ namespace AFVC
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine();
             return output;
-        }
-    }
-
-    internal class CodeRange
-    {
-        internal bool childrenAsWell = true;
-        internal CatalogCode fromCode;
-        internal CatalogCode toCode;
-
-        public int Span => toCode.Youngest() - fromCode.Youngest() + 1;
-
-        public CodeRange(CatalogCode f, CatalogCode t, bool caw = true)
-        {
-            fromCode = f;
-            toCode = t;
-            childrenAsWell = caw;
-        }
-
-        public CodeRange(string range)
-        {
-            string[] codes = range.Split('-');
-            int l1 = codes[0].Length;
-            if (l1 >= 2 && codes[0][l1 - 1] == '.')
-            {
-                childrenAsWell = false;
-                codes[0] = codes[0].RemoveLast(1);
-            }
-
-            fromCode = new CatalogCode(codes[0]);
-            if (codes.Length == 1)
-            {
-                toCode = fromCode;
-            }
-            else
-            {
-                toCode = new CatalogCode(childrenAsWell ? codes[1] : codes[1].RemoveLast(1));
-                if (!CatalogCode.SameFolder(fromCode, toCode) || fromCode.CompareTo(toCode) > 0)
-                    throw new CatalogError("Invalid code range.");
-            }
-        }
-
-        public static List<CodeRange> Parse(string readAnswer)
-        {
-            List<CodeRange> output = new List<CodeRange>();
-            foreach (string range in readAnswer.Split(',')) output.Add(new CodeRange(range));
-
-            return output;
-        }
-
-        public static CodeRange operator +(CodeRange r, int diff)
-        {
-            return new CodeRange(r.fromCode + diff, r.toCode + diff, r.childrenAsWell);
-        }
-
-        public static CodeRange operator -(CodeRange a, CodeRange b)
-        {
-            if (a.Span != b.Span || !a.fromCode.parent.Equals(b.fromCode.parent) ||
-                a.childrenAsWell != b.childrenAsWell)
-                throw new CatalogError($"Cannot find difference between {a} and {b}");
-            if (a.Equals(b))
-                return null;
-            CatalogCode temp;
-            if (a.fromCode.Youngest() < b.fromCode.Youngest())
-            {
-                temp = a.fromCode.parent +
-                       new CatalogCode(Math.Min(a.toCode.Youngest(), b.fromCode.Youngest() - 1).ToString());
-                return new CodeRange(a.fromCode, temp);
-            }
-
-            temp = a.fromCode.parent +
-                   new CatalogCode(Math.Max(a.fromCode.Youngest(), b.toCode.Youngest() + 1).ToString());
-            return new CodeRange(temp, a.toCode);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is CodeRange c)
-                return c.toCode.Equals(toCode) && c.fromCode.Equals(fromCode) && c.childrenAsWell == childrenAsWell;
-            return base.Equals(obj);
-        }
-
-        public override string ToString()
-        {
-            return $"{fromCode} - {toCode}";
         }
     }
 }

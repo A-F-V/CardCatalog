@@ -9,7 +9,7 @@ namespace AFVC
     {
         public List<CatalogEntry> children = new List<CatalogEntry>();
         public CatalogCode codePrefix { get; }
-        public string name { get; set; }
+        public string name { get; set; } = "";
         public string FileName => $"{codePrefix.ToString()} {name.ToString()}";
 
         public CatalogEntry()

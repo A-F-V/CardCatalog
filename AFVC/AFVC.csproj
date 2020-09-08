@@ -71,6 +71,7 @@
     <Compile Include="CatalogCode.cs" />
     <Compile Include="CatalogError.cs" />
     <Compile Include="CatalogManager.cs" />
+    <Compile Include="CodeRange.cs" />
     <Compile Include="ColourPalette.cs" />
     <Compile Include="Loader.cs" />
     <Compile Include="MorePaths.cs" />
